@@ -1,4 +1,4 @@
-import { Income, Expense, Budget, FinancialSummary, CategorySummary, MonthlyTrend } from '../types';
+import { Income, Expense, Budget, FinancialSummary, CategorySummary, MonthlyTrend, LocaleCode } from '../types';
 
 export const calculateSummary = (
   incomes: Income[],
@@ -67,14 +67,21 @@ export const getIncomesByCategory = (incomes: Income[]): CategorySummary[] => {
     .sort((a, b) => b.total - a.total);
 };
 
-export const getMonthlyTrends = (incomes: Income[], expenses: Expense[], monthsCount = 6): MonthlyTrend[] => {
+export const getMonthlyTrends = (
+  incomes: Income[],
+  expenses: Expense[],
+  monthsCount = 6,
+  locale: LocaleCode = 'ru'
+): MonthlyTrend[] => {
   const result: MonthlyTrend[] = [];
   const now = new Date();
+  const jsLocale = locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US';
 
   for (let i = monthsCount - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const label = d.toLocaleString('en-US', { month: 'short' });
+    // Chart axis labels follow the interface language instead of always being English
+    const label = d.toLocaleString(jsLocale, { month: 'short' });
 
     const monthIncomes = incomes
       .filter((inc) => inc.date.startsWith(yearMonth))

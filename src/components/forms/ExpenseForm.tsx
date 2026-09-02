@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Expense, ExpenseCategory, PaymentMethod } from '../../types';
+import { toDateKey } from '../../utils/formatters';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
@@ -35,16 +37,17 @@ const defaultExpenseCategories: ExpenseCategory[] = [
 
 const paymentMethods: PaymentMethod[] = ['card', 'cash', 'transfer'];
 
-const schema = z.object({
-  amount: z.coerce.number().positive({ message: 'Сумма должна быть больше 0' }),
-  category: z.string().min(1, { message: 'Выберите категорию' }),
-  payment_method: z.enum(['card', 'cash', 'transfer']),
-  date: z.string().min(1, { message: 'Дата обязательна' }),
-  time: z.string().optional(),
-  note: z.string().optional(),
-});
+const buildSchema = (t: TFunction) =>
+  z.object({
+    amount: z.coerce.number().positive({ message: t('validation.amountPositive') }),
+    category: z.string().min(1, { message: t('validation.categoryRequired') }),
+    payment_method: z.enum(['card', 'cash', 'transfer']),
+    date: z.string().min(1, { message: t('validation.dateRequired') }),
+    time: z.string().optional(),
+    note: z.string().optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 interface ExpenseFormProps {
   initialData?: Expense;
@@ -58,6 +61,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   onCancel,
 }) => {
   const { t } = useTranslation();
+  // Validation messages follow the interface language, so the schema is rebuilt
+  // whenever the language changes.
+  const schema = useMemo(() => buildSchema(t), [t]);
   const { addExpense, updateExpense, customCategories, addCustomCategory } = useData();
   const { user } = useAuth();
 
@@ -79,7 +85,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       amount: initialData?.amount || ('' as unknown as number),
       category: initialData?.category || 'groceries',
       payment_method: initialData?.payment_method || 'card',
-      date: initialData?.date || now.toISOString().split('T')[0],
+      date: initialData?.date || toDateKey(now),
       time: initialData?.time || currentTime,
       note: initialData?.note || '',
     },
@@ -148,9 +154,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   const paymentOptions = paymentMethods.map((pm) => ({
     value: pm,
-    label: t(`expenses.methods.${pm}`, {
-      defaultValue: pm === 'card' ? 'Банковская карта' : pm === 'cash' ? 'Наличные' : 'Банковский перевод',
-    }),
+    label: t(`expenses.methods.${pm}`),
   }));
 
   return (
@@ -180,7 +184,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
               </>
             ) : (
               <>
-                <Plus className="w-3 h-3" /> + Своя категория
+                <Plus className="w-3 h-3" /> {t('categories.own')}
               </>
             )}
           </button>
@@ -193,12 +197,12 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
               type="text"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              placeholder="Название категории (напр. 'Спорт')"
+              placeholder={t('categories.ownPlaceholderExpense')}
               className="flex-1 bg-transparent text-xs text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400"
               autoFocus
             />
             <Button size="sm" variant="primary" type="button" onClick={handleCreateCategory} className="text-xs h-7 px-2.5">
-              Добавить
+              {t('categories.add')}
             </Button>
           </div>
         )}
@@ -229,7 +233,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         />
 
         <Input
-          label="Время операции"
+          label={t('expenses.time')}
           type="time"
           error={errors.time?.message}
           {...register('time')}

@@ -25,22 +25,23 @@
     "password": "Parol",
     "passwordPlaceholder": "••••••••",
     "name": "To'liq ism",
-    "namePlaceholder": "Aleks Merser",
+    "namePlaceholder": "Anvar Aliyev",
     "confirmPassword": "Parolni tasdiqlang",
-    "demoButton": "Tezkor Demo Kirish",
-    "demoBadge": "DEMO",
-    "demoDesc": "Barcha imkoniyatlarni sinab ko'ring",
     "noAccount": "Hisobingiz yo'qmi?",
     "hasAccount": "Hisobingiz bormi?",
     "signInAction": "Kirish",
     "signUpAction": "Ro'yxatdan o'tish",
     "logout": "Chiqish",
-    "secureSession": "Sessiya xavfsiz Cookie orqali saqlanadi",
+    "secureSession": "Xavfsiz shifrlangan sessiya",
     "errors": {
       "enterEmail": "Iltimos, elektron pochtangizni kiriting",
+      "enterPassword": "Iltimos, parolingizni kiriting",
+      "passwordTooShort": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
       "fillAll": "Iltimos, barcha maydonlarni to'ldiring",
-      "signInFailed": "Tizimga kirishda xatolik",
-      "signUpFailed": "Ro'yxatdan o'tishda xatolik"
+      "signInFailed": "Noto'g'ri email yoki parol",
+      "signUpFailed": "Ro'yxatdan o'tishda xatolik. Boshqa email bilan urinib ko'ring",
+      "userNotFound": "Bunday emailga ega foydalanuvchi topilmadi",
+      "userAlreadyRegistered": "Ushbu email bilan foydalanuvchi allaqachon mavjud"
     }
   },
   "dashboard": {
@@ -111,7 +112,9 @@
       "investments": "Investitsiyalar va dividendlar",
       "transfer": "O'tkazma",
       "other": "Boshqa daromadlar"
-    }
+    },
+    "time": "Amal vaqti",
+    "depositMethod": "Pul qayerga tushdi (o'tkazma usuli)"
   },
   "expenses": {
     "title": "Xarajatlar",
@@ -158,7 +161,8 @@
       "pets": "Uy hayvonlari",
       "transfer": "Maqsadga o'tkazma",
       "miscellaneous": "Boshqa xarajatlar"
-    }
+    },
+    "time": "Amal vaqti"
   },
   "budgets": {
     "title": "Byudjet rejalashtirish",
@@ -194,7 +198,14 @@
     "completed": "Maqsadga erishildi!",
     "color": "Rang belgisi",
     "empty": "Hozircha faol maqsadlar yo'q",
-    "emptyDesc": "Birinchi maqsadingizni yarating va tejashni boshlang."
+    "emptyDesc": "Birinchi maqsadingizni yarating va tejashni boshlang.",
+    "remaining": "Qoldi: {{value}}",
+    "depositMore": "Yana qo'shish",
+    "transferNote": "Maqsadga: {{title}}",
+    "defaultTitle": "Jamgarma",
+    "alreadyComplete": "Maqsadga allaqachon erishilgan — qo'shadigan narsa yo'q",
+    "depositFailed": "Mablag' qo'shib bo'lmadi. Qaytadan urinib ko'ring",
+    "capped": "{{value}} kiritildi — maqsadgacha shuncha qolgan edi"
   },
   "calendar": {
     "title": "Moliyaviy taqvim",
@@ -206,7 +217,21 @@
     "expenses": "Xarajatlar",
     "balance": "Kun yakuni",
     "noEvents": "Bu kunda operatsiyalar yo'q",
-    "weekDays": ["Dush", "Sesh", "Chor", "Pay", "Jum", "Shan", "Yak"]
+    "weekDays": [
+      "Dush",
+      "Sesh",
+      "Chor",
+      "Pay",
+      "Jum",
+      "Shan",
+      "Yak"
+    ],
+    "prevYear": "Oldingi yil",
+    "prevMonth": "Oldingi oy",
+    "nextMonth": "Keyingi oy",
+    "nextYear": "Keyingi yil",
+    "yearLabel": "{{year}}-yil",
+    "subscription": "Obuna"
   },
   "statistics": {
     "title": "Tahlil va Hisobotlar",
@@ -223,7 +248,8 @@
     "insights": "Asosiy xulosalar",
     "savingsCapacity": "Jamg'arma imkoniyati",
     "avgDailySpend": "Kunlik o'rtacha xarajat",
-    "operationsCount": "operatsiyalar"
+    "operationsCount": "operatsiyalar",
+    "expensesLabel": "Xarajatlar"
   },
   "profile": {
     "title": "Profil va Sozlamalar",
@@ -266,7 +292,10 @@
     "amountPositive": "Miqdor 0 dan katta bo'lishi kerak",
     "dateRequired": "Sana majburiy",
     "titleMin": "Nom kamida 2 belgidan iborat bo'lishi kerak",
-    "currentNonNegative": "Miqdor manfiy bo'lishi mumkin emas"
+    "currentNonNegative": "Miqdor manfiy bo'lishi mumkin emas",
+    "categoryRequired": "Kategoriyani tanlang",
+    "limitPositive": "Limit 0 dan katta bo'lishi kerak",
+    "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak"
   },
   "common": {
     "search": "Qidirish...",
@@ -286,7 +315,11 @@
     "yes": "Ha",
     "no": "Yo'q",
     "success": "Muvaffaqiyatli!",
-    "error": "Xatolik yuz berdi"
+    "error": "Xatolik yuz berdi",
+    "found": "Topildi: {{n}}",
+    "resetFilters": "Filtrlarni tozalash",
+    "select": "Tanlang...",
+    "total": "Jami: {{value}}"
   },
   "periods": {
     "all": "Barcha sanalar",
@@ -301,5 +334,46 @@
     "selectRange": "Davrni tanlang",
     "apply": "Qo'llash",
     "close": "Yopish"
+  },
+  "categories": {
+    "title": "Kategoriyalarni boshqarish",
+    "description": "O'z kategoriyalaringizni qo'shing yoki tizimdagilarni ko'ring",
+    "expenseTab": "Xarajat kategoriyalari",
+    "incomeTab": "Daromad kategoriyalari",
+    "typeIncome": "daromad",
+    "typeExpense": "xarajat",
+    "addFor": "Kategoriya qo'shish ({{type}})",
+    "newFor": "Yangi kategoriya ({{type}})",
+    "namePlaceholder": "Masalan: Fitnes, Kriptovalyuta, Ta'lim",
+    "chooseColor": "Rang tanlang:",
+    "create": "Yaratish",
+    "yours": "Sizning kategoriyalaringiz ({{n}})",
+    "emptyTitle": "Hali kategoriya yaratilmagan",
+    "emptyDesc": "Yuqoridagi tugma orqali o'zingiznikini qo'shing",
+    "opsCount": "{{n}} amal",
+    "deleteTitle": "Kategoriyani o'chirish",
+    "deleteConfirm": "O'chirilsinmi?",
+    "systemTitle": "Tizim kategoriyalari ({{n}})",
+    "systemNote": "Tizim kategoriyalarini o'chirib bo'lmaydi",
+    "done": "Tayyor",
+    "duplicate": "Bunday nomli kategoriya allaqachon mavjud",
+    "manage": "Kategoriyalarni sozlash",
+    "sectionTitle": "Daromad va xarajat kategoriyalari",
+    "sectionDesc": "O'z kategoriyalaringizni yarating yoki keraksizlarini o'chiring",
+    "short": "Kategoriyalar",
+    "own": "+ Maxsus kategoriya",
+    "ownPlaceholderIncome": "Kategoriya nomi (masalan, 'Kriptovalyuta')",
+    "ownPlaceholderExpense": "Kategoriya nomi (masalan, 'Sport')",
+    "add": "Qo'shish"
+  },
+  "datePicker": {
+    "placeholder": "kk.oo.yyyy",
+    "selectMonth": "Oyni tanlang",
+    "selectYear": "Yilni tanlang",
+    "prevYear": "-1 yil",
+    "prevMonth": "-1 oy",
+    "nextMonth": "+1 oy",
+    "nextYear": "+1 yil",
+    "back": "Orqaga"
   }
 }

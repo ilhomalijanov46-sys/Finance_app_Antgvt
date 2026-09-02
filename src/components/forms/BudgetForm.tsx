@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Budget, ExpenseCategory } from '../../types';
 import { useData } from '../../context/DataContext';
@@ -31,13 +32,14 @@ const expenseCategories: ExpenseCategory[] = [
   'miscellaneous',
 ];
 
-const schema = z.object({
-  category: z.string().min(1, { message: 'Выберите категорию' }),
-  limit_amount: z.coerce.number().positive({ message: 'Лимит должен быть больше 0' }),
-  period: z.enum(['monthly', 'weekly', 'yearly']),
-});
+const buildSchema = (t: TFunction) =>
+  z.object({
+    category: z.string().min(1, { message: t('validation.categoryRequired') }),
+    limit_amount: z.coerce.number().positive({ message: t('validation.limitPositive') }),
+    period: z.enum(['monthly', 'weekly', 'yearly']),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 interface BudgetFormProps {
   initialData?: Budget;
@@ -51,6 +53,9 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   onCancel,
 }) => {
   const { t } = useTranslation();
+  // Validation messages follow the interface language, so the schema is rebuilt
+  // whenever the language changes.
+  const schema = useMemo(() => buildSchema(t), [t]);
   const { saveBudget } = useData();
   const { user } = useAuth();
 

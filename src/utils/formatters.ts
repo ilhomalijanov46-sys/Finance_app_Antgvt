@@ -45,6 +45,17 @@ export const formatCurrency = (
   }
 };
 
+// Local calendar day as YYYY-MM-DD. Dates in this app are local day keys — the pickers
+// build them from local components and formatDate parses them back as local — so
+// `toISOString()` must never be used to derive one: east of UTC it returns the previous
+// day during the early morning (02:00 in UTC+5 is still "yesterday" in UTC).
+export const toDateKey = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const formatDate = (
   dateString: string,
   locale: LocaleCode = 'ru',

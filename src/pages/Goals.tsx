@@ -21,6 +21,7 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -33,6 +34,7 @@ export const Goals: React.FC = () => {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [depositingGoal, setDepositingGoal] = useState<Goal | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
+  const [depositError, setDepositError] = useState<string | null>(null);
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
 
   const totalTarget = goals.reduce((sum, g) => sum + Number(g.target_amount || 0), 0);
@@ -44,7 +46,16 @@ export const Goals: React.FC = () => {
     if (!depositingGoal || !depositAmount || Number(depositAmount) <= 0) return;
 
     const amount = Number(depositAmount);
-    const updated = await depositToGoal(depositingGoal.id, amount);
+
+    // A failing deposit used to reject silently, leaving the dialog open with no hint
+    // that anything went wrong. Report it instead of swallowing it.
+    let updated;
+    try {
+      updated = await depositToGoal(depositingGoal.id, amount);
+    } catch {
+      setDepositError(t('goals.depositFailed'));
+      return;
+    }
 
     // If goal reached 100%, trigger confetti celebration!
     if (updated.current_amount >= updated.target_amount) {
@@ -58,7 +69,12 @@ export const Goals: React.FC = () => {
 
     setDepositingGoal(null);
     setDepositAmount('');
+    setDepositError(null);
   };
+
+  const isDepositTargetComplete = Boolean(
+    depositingGoal && Number(depositingGoal.current_amount) >= Number(depositingGoal.target_amount)
+  );
 
   const getDaysLeft = (deadline?: string) => {
     if (!deadline) return null;
@@ -177,7 +193,7 @@ export const Goals: React.FC = () => {
                         type="button"
                         onClick={() => setEditingGoal(goal)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                        title={t('common.edit') || 'Редактировать'}
+                        title={t('common.edit')}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -185,7 +201,7 @@ export const Goals: React.FC = () => {
                         type="button"
                         onClick={() => setDeletingGoalId(goal.id)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                        title={t('common.delete') || 'Удалить'}
+                        title={t('common.delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -196,13 +212,17 @@ export const Goals: React.FC = () => {
                   <div className="my-4 space-y-2.5 pt-3 border-t border-slate-100/80 dark:border-zinc-800/80">
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">Накоплено</span>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">
+                {t('goals.currentAmount')}
+              </span>
                         <p className={`text-base sm:text-lg font-bold tracking-tight ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-zinc-100'}`}>
                           {format(goal.current_amount)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">Целевая сумма</span>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">
+                {t('goals.targetAmount')}
+              </span>
                         <p className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                           {format(goal.target_amount)}
                         </p>
@@ -222,11 +242,11 @@ export const Goals: React.FC = () => {
                         <span className="text-slate-700 dark:text-zinc-300">{percent}%</span>
                         {isCompleted ? (
                           <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
-                            🎉 {t('goals.completed') || 'Цель достигнута!'}
+                            🎉 {t('goals.completed')}
                           </span>
                         ) : (
                           <span className="text-slate-400 dark:text-zinc-500 font-normal">
-                            Осталось: {format(Math.max(0, goal.target_amount - goal.current_amount))}
+                            {t('goals.remaining', { value: format(Math.max(0, goal.target_amount - goal.current_amount)) })}
                           </span>
                         )}
                       </div>
@@ -242,7 +262,7 @@ export const Goals: React.FC = () => {
                       leftIcon={<Plus className="w-3.5 h-3.5" />}
                       onClick={() => setDepositingGoal(goal)}
                     >
-                      {isCompleted ? 'Пополнить еще' : t('goals.deposit')}
+                      {isCompleted ? t('goals.depositMore') : t('goals.deposit')}
                     </Button>
                   </div>
                 </Card>
@@ -255,7 +275,11 @@ export const Goals: React.FC = () => {
       {/* Deposit Modal */}
       <Dialog
         isOpen={Boolean(depositingGoal)}
-        onClose={() => setDepositingGoal(null)}
+        onClose={() => {
+          setDepositingGoal(null);
+          setDepositAmount('');
+          setDepositError(null);
+        }}
         title={`${t('goals.deposit')}: ${depositingGoal?.title}`}
       >
         <form onSubmit={handleDepositSubmit} className="space-y-4">
@@ -265,16 +289,42 @@ export const Goals: React.FC = () => {
             step="any"
             placeholder="0.00"
             value={depositAmount}
-            onChange={(e) => setDepositAmount(e.target.value)}
+            onChange={(e) => {
+              setDepositAmount(e.target.value);
+              if (depositError) setDepositError(null);
+            }}
             required
             autoFocus
+            disabled={isDepositTargetComplete}
           />
 
+          {/* A full goal accepts nothing, so say so rather than letting the deposit
+              appear to succeed while the balance stays put. */}
+          {isDepositTargetComplete && (
+            <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {t('goals.alreadyComplete')}
+            </p>
+          )}
+
+          {depositError && (
+            <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {depositError}
+            </p>
+          )}
+
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
-            <Button type="button" variant="ghost" onClick={() => setDepositingGoal(null)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setDepositingGoal(null);
+                setDepositAmount('');
+                setDepositError(null);
+              }}
+            >
               {t('common.cancel')}
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" disabled={isDepositTargetComplete}>
               {t('goals.deposit')}
             </Button>
           </div>

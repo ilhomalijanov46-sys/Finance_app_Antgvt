@@ -4,34 +4,44 @@ import { Goal } from '../types';
 
 export const goalService = {
   getAll: async (userId: string): Promise<Goal[]> => {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        return data as Goal[];
-      }
+    // If Demo user mode
+    if (userId === 'demo-user-777' || !isSupabaseConfigured || !supabase) {
+      return localDemoStore.getGoals();
     }
-    // Fallback
-    return localDemoStore.getGoals().filter((g) => !userId || g.user_id === userId || userId === 'demo-user-777');
+
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch goals from Supabase:', error);
+      return [];
+    }
+
+    return (data as Goal[]) || [];
   },
 
   create: async (goal: Omit<Goal, 'id' | 'created_at'>): Promise<Goal> => {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && goal.user_id !== 'demo-user-777') {
       const { data, error } = await supabase
         .from('goals')
         .insert([goal])
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('Failed to create goal in Supabase:', error);
+        throw error;
+      }
+
+      if (data) {
         return data as Goal;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const newGoal: Goal = {
       ...goal,
       id: 'goal-' + Date.now(),
@@ -55,7 +65,8 @@ export const goalService = {
         return data as Goal;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getGoals();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
     localDemoStore.setGoals(updated);
@@ -64,21 +75,25 @@ export const goalService = {
     return result;
   },
 
-  deposit: async (id: string, amount: number): Promise<Goal> => {
+  deposit: async (id: string, amount: number): Promise<{ goal: Goal; applied: number }> => {
     let goal: Goal | undefined;
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('goals').select('*').eq('id', id).single();
       if (!error && data) {
         goal = data as Goal;
       }
-    } else {
+    }
+
+    if (!goal) {
       goal = localDemoStore.getGoals().find((g) => g.id === id);
     }
-    
+
     if (!goal) throw new Error('Goal not found');
 
-    const newAmount = Math.min(goal.target_amount, (goal.current_amount || 0) + amount);
-    return goalService.update(id, { current_amount: newAmount });
+    const previousAmount = Number(goal.current_amount || 0);
+    const newAmount = Math.min(goal.target_amount, previousAmount + amount);
+    const updated = await goalService.update(id, { current_amount: newAmount });
+    return { goal: updated, applied: newAmount - previousAmount };
   },
 
   delete: async (id: string): Promise<void> => {
@@ -86,7 +101,8 @@ export const goalService = {
       const { error } = await supabase.from('goals').delete().eq('id', id);
       if (!error) return;
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getGoals();
     localDemoStore.setGoals(current.filter((item) => item.id !== id));
   },

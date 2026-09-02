@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Menu, X, Plus, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from '../ui/Button';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '../ui/Dialog';
-import { IncomeForm } from '../forms/IncomeForm';
-import { ExpenseForm } from '../forms/ExpenseForm';
-import { GoalForm } from '../forms/GoalForm';
+import { PageLoader } from '../common/PageLoader';
+
+// The quick-action forms live behind dialogs, so their validation stack (react-hook-form
+// and zod) is fetched the first time one is opened rather than on initial page load.
+const IncomeForm = lazy(() => import('../forms/IncomeForm').then((m) => ({ default: m.IncomeForm })));
+const ExpenseForm = lazy(() => import('../forms/ExpenseForm').then((m) => ({ default: m.ExpenseForm })));
+const GoalForm = lazy(() => import('../forms/GoalForm').then((m) => ({ default: m.GoalForm })));
 
 export interface HeaderProps {
   onOpenMobileMenu: () => void;
@@ -76,7 +80,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, isMobileMenuOp
         onClose={() => setActiveModal(null)}
         title={t('incomes.add')}
       >
-        <IncomeForm onSuccess={() => setActiveModal(null)} onCancel={() => setActiveModal(null)} />
+        <Suspense fallback={<PageLoader showLabel={false} />}>
+          <IncomeForm onSuccess={() => setActiveModal(null)} onCancel={() => setActiveModal(null)} />
+        </Suspense>
       </Dialog>
 
       <Dialog
@@ -84,7 +90,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, isMobileMenuOp
         onClose={() => setActiveModal(null)}
         title={t('expenses.add')}
       >
-        <ExpenseForm onSuccess={() => setActiveModal(null)} onCancel={() => setActiveModal(null)} />
+        <Suspense fallback={<PageLoader showLabel={false} />}>
+          <ExpenseForm onSuccess={() => setActiveModal(null)} onCancel={() => setActiveModal(null)} />
+        </Suspense>
       </Dialog>
 
       <Dialog
@@ -92,7 +100,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, isMobileMenuOp
         onClose={() => setActiveModal(null)}
         title={t('goals.add')}
       >
-        <GoalForm onSuccess={() => setActiveModal(null)} onCancel={() => setActiveModal(null)} />
+        <Suspense fallback={<PageLoader showLabel={false} />}>
+          <GoalForm onSuccess={() => setActiveModal(null)} onCancel={() => setActiveModal(null)} />
+        </Suspense>
       </Dialog>
     </>
   );

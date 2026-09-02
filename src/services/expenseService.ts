@@ -4,34 +4,45 @@ import { Expense } from '../types';
 
 export const expenseService = {
   getAll: async (userId: string): Promise<Expense[]> => {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
-
-      if (!error && data) {
-        return data as Expense[];
-      }
+    // If Demo user mode
+    if (userId === 'demo-user-777' || !isSupabaseConfigured || !supabase) {
+      return localDemoStore.getExpenses();
     }
-    // Fallback to local store
-    return localDemoStore.getExpenses().filter((e) => !userId || e.user_id === userId || userId === 'demo-user-777');
+
+    // Real Supabase user
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch expenses from Supabase:', error);
+      return [];
+    }
+
+    return (data as Expense[]) || [];
   },
 
   create: async (expense: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> => {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && expense.user_id !== 'demo-user-777') {
       const { data, error } = await supabase
         .from('expenses')
         .insert([expense])
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('Failed to create expense in Supabase:', error);
+        throw error;
+      }
+
+      if (data) {
         return data as Expense;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const newExpense: Expense = {
       ...expense,
       id: 'exp-' + Date.now(),
@@ -55,7 +66,8 @@ export const expenseService = {
         return data as Expense;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getExpenses();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
     localDemoStore.setExpenses(updated);
@@ -69,7 +81,8 @@ export const expenseService = {
       const { error } = await supabase.from('expenses').delete().eq('id', id);
       if (!error) return;
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getExpenses();
     localDemoStore.setExpenses(current.filter((item) => item.id !== id));
   },

@@ -7,8 +7,9 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ThemeToggle } from '../components/layout/ThemeToggle';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { formatAuthError } from '../utils/authErrors';
 
 export const Register: React.FC = () => {
   const { t } = useTranslation();
@@ -23,18 +24,32 @@ export const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !name) {
-      setError(t('auth.errors.fillAll'));
+
+    if (!name.trim()) {
+      setError('Пожалуйста, введите ваше имя');
       return;
     }
+    if (!email.trim()) {
+      setError('Пожалуйста, введите ваш email');
+      return;
+    }
+    if (!password) {
+      setError('Пожалуйста, введите пароль');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Пароль должен содержать минимум 6 символов');
+      return;
+    }
+
     setError('');
     setSubmitting(true);
     try {
-      await signUp(email, password || 'password123', name);
+      await signUp(email.trim(), password, name.trim());
       navigate('/');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('auth.errors.signUpFailed');
-      setError(msg);
+      console.error('Sign up error:', err);
+      setError(formatAuthError(err, 'Не удалось зарегистрироваться. Попробуйте другой email'));
     } finally {
       setSubmitting(false);
     }
@@ -68,8 +83,9 @@ export const Register: React.FC = () => {
             </h2>
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400">
-                {error}
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -77,8 +93,12 @@ export const Register: React.FC = () => {
               label={t('auth.name')}
               placeholder={t('auth.namePlaceholder')}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (error) setError('');
+              }}
               required
+              autoFocus
             />
 
             <Input
@@ -86,22 +106,32 @@ export const Register: React.FC = () => {
               type="email"
               placeholder={t('auth.emailPlaceholder')}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError('');
+              }}
               required
             />
 
-            <Input
-              label={t('auth.password')}
-              type="password"
-              placeholder={t('auth.passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div>
+              <Input
+                label={t('auth.password')}
+                type="password"
+                placeholder={t('auth.passwordPlaceholder')}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError('');
+                }}
+                required
+                helperText="Минимум 6 символов"
+              />
+            </div>
 
             <Button
               type="submit"
               variant="primary"
-              className="w-full"
+              className="w-full h-11 text-xs font-semibold tracking-wide"
               isLoading={submitting || isLoading}
             >
               {t('auth.signUpAction')}
@@ -113,7 +143,7 @@ export const Register: React.FC = () => {
               {t('auth.hasAccount')}{' '}
               <Link
                 to="/login"
-                className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors"
               >
                 {t('auth.signIn')}
               </Link>

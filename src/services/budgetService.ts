@@ -4,33 +4,43 @@ import { Budget } from '../types';
 
 export const budgetService = {
   getAll: async (userId: string): Promise<Budget[]> => {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('budgets')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (!error && data) {
-        return data as Budget[];
-      }
+    // If Demo user mode
+    if (userId === 'demo-user-777' || !isSupabaseConfigured || !supabase) {
+      return localDemoStore.getBudgets();
     }
-    // Fallback
-    return localDemoStore.getBudgets().filter((b) => !userId || b.user_id === userId || userId === 'demo-user-777');
+
+    const { data, error } = await supabase
+      .from('budgets')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Failed to fetch budgets from Supabase:', error);
+      return [];
+    }
+
+    return (data as Budget[]) || [];
   },
 
   createOrUpdate: async (budget: Omit<Budget, 'id' | 'created_at'>): Promise<Budget> => {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && budget.user_id !== 'demo-user-777') {
       const { data, error } = await supabase
         .from('budgets')
         .upsert([budget], { onConflict: 'user_id,category' })
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('Failed to save budget in Supabase:', error);
+        throw error;
+      }
+
+      if (data) {
         return data as Budget;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getBudgets();
     const existingIndex = current.findIndex((b) => b.category === budget.category);
     if (existingIndex >= 0) {
@@ -54,7 +64,8 @@ export const budgetService = {
       const { error } = await supabase.from('budgets').delete().eq('id', id);
       if (!error) return;
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getBudgets();
     localDemoStore.setBudgets(current.filter((item) => item.id !== id));
   },

@@ -7,12 +7,13 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ThemeToggle } from '../components/layout/ThemeToggle';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
-import { Sparkles, ShieldCheck, ArrowRight, Play } from 'lucide-react';
+import { Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { formatAuthError } from '../utils/authErrors';
 
 export const Login: React.FC = () => {
   const { t } = useTranslation();
-  const { signIn, signInDemo, isLoading } = useAuth();
+  const { signIn, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -22,30 +23,23 @@ export const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setError(t('auth.errors.enterEmail'));
+    if (!email.trim()) {
+      setError('Пожалуйста, введите ваш email');
       return;
     }
+    if (!password) {
+      setError('Пожалуйста, введите пароль');
+      return;
+    }
+
     setError('');
     setSubmitting(true);
     try {
-      await signIn(email, password || 'password123');
+      await signIn(email.trim(), password);
       navigate('/');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('auth.errors.signInFailed');
-      setError(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setSubmitting(true);
-    try {
-      await signInDemo();
-      navigate('/');
-    } catch (err) {
-      console.error(err);
+      console.error('Sign in error:', err);
+      setError(formatAuthError(err, 'Не удалось войти. Проверьте данные и попробуйте снова'));
     } finally {
       setSubmitting(false);
     }
@@ -74,36 +68,6 @@ export const Login: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-zinc-400">{t('auth.subtitle')}</p>
         </div>
 
-        {/* Demo Fast Track Callout */}
-        <Card
-          variant="interactive"
-          padding="sm"
-          onClick={handleDemoLogin}
-          className="border-blue-500/30 bg-blue-500/5 dark:bg-blue-500/10 hover:border-blue-500/50 p-4 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-apple-sm">
-                <Play className="w-4 h-4 fill-white" />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
-                    {t('auth.demoButton')}
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-semibold">
-                    {t('auth.demoBadge')}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                  {t('auth.demoDesc')}
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          </div>
-        </Card>
-
         {/* Standard Form */}
         <Card variant="glass" padding="lg" className="shadow-apple-lg">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,8 +76,9 @@ export const Login: React.FC = () => {
             </h2>
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400">
-                {error}
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -122,8 +87,12 @@ export const Login: React.FC = () => {
               type="email"
               placeholder={t('auth.emailPlaceholder')}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError('');
+              }}
               required
+              autoFocus
             />
 
             <Input
@@ -131,13 +100,17 @@ export const Login: React.FC = () => {
               type="password"
               placeholder={t('auth.passwordPlaceholder')}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError('');
+              }}
+              required
             />
 
             <Button
               type="submit"
               variant="primary"
-              className="w-full"
+              className="w-full h-11 text-xs font-semibold tracking-wide"
               isLoading={submitting || isLoading}
             >
               {t('auth.signInAction')}
@@ -149,7 +122,7 @@ export const Login: React.FC = () => {
               {t('auth.noAccount')}{' '}
               <Link
                 to="/register"
-                className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors"
               >
                 {t('auth.signUp')}
               </Link>

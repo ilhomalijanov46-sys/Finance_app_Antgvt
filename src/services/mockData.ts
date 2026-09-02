@@ -1,4 +1,5 @@
 import { Income, Expense, Budget, Goal, UserProfile } from '../types';
+import { toDateKey } from '../utils/formatters';
 
 export const DEMO_USER: UserProfile = {
   id: 'demo-user-777',
@@ -15,7 +16,7 @@ export const DEMO_USER: UserProfile = {
 const getRelativeDate = (daysAgo: number): string => {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
-  return d.toISOString().split('T')[0];
+  return toDateKey(d);
 };
 
 export const INITIAL_INCOMES: Income[] = [

@@ -13,7 +13,7 @@ import { StatCard } from '../components/common/StatCard';
 import { exportToCSV } from '../utils/exportImport';
 import { Income, IncomeCategory } from '../types';
 import { CategoryManagerModal } from '../components/modals/CategoryManagerModal';
-import { getCategoryColor } from '../utils/formatters';
+import { getCategoryColor, toDateKey } from '../utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp,
@@ -57,22 +57,22 @@ export const Incomes: React.FC = () => {
 
   // Filter incomes
   const filteredIncomes = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toDateKey();
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().split('T')[0];
+    const yesterday = toDateKey(yesterdayDate);
 
     const sevenDaysAgoDate = new Date();
     sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = sevenDaysAgoDate.toISOString().split('T')[0];
+    const sevenDaysAgo = toDateKey(sevenDaysAgoDate);
 
     const thirtyDaysAgoDate = new Date();
     thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-    const thirtyDaysAgo = thirtyDaysAgoDate.toISOString().split('T')[0];
+    const thirtyDaysAgo = toDateKey(thirtyDaysAgoDate);
 
     const ninetyDaysAgoDate = new Date();
     ninetyDaysAgoDate.setDate(ninetyDaysAgoDate.getDate() - 90);
-    const ninetyDaysAgo = ninetyDaysAgoDate.toISOString().split('T')[0];
+    const ninetyDaysAgo = toDateKey(ninetyDaysAgoDate);
 
     const currentYearMonth = today.substring(0, 7);
 
@@ -139,10 +139,10 @@ export const Incomes: React.FC = () => {
   ];
 
   const methodFilterOptions = [
-    { value: 'all', label: t('common.allMethods', { defaultValue: 'Все способы' }) },
-    { value: 'card', label: t('expenses.methods.card', { defaultValue: 'Банковская карта' }) },
-    { value: 'cash', label: t('expenses.methods.cash', { defaultValue: 'Наличные' }) },
-    { value: 'transfer', label: t('expenses.methods.transfer', { defaultValue: 'Банковский перевод' }) },
+    { value: 'all', label: t('common.allMethods') },
+    { value: 'card', label: t('expenses.methods.card') },
+    { value: 'cash', label: t('expenses.methods.cash') },
+    { value: 'transfer', label: t('expenses.methods.transfer') },
   ];
 
   return (
@@ -165,7 +165,7 @@ export const Incomes: React.FC = () => {
             leftIcon={<Tags className="w-3.5 h-3.5" />}
             onClick={() => setIsCategoryModalOpen(true)}
           >
-            Категории
+            {t('categories.short')}
           </Button>
           <Button
             size="sm"
@@ -215,11 +215,11 @@ export const Incomes: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> {t('common.filter', { defaultValue: 'Фильтры и поиск' })}
+              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> {t('common.filter')}
             </span>
             {filteredIncomes.length !== incomes.length && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                Найдено: {filteredIncomes.length}
+                {t('common.found', { n: filteredIncomes.length })}
               </span>
             )}
           </div>
@@ -240,7 +240,7 @@ export const Incomes: React.FC = () => {
                 }}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 transition-all shadow-apple-sm"
               >
-                <RotateCcw className="w-3 h-3" /> Сбросить фильтры
+                <RotateCcw className="w-3 h-3" /> {t('common.resetFilters')}
               </motion.button>
             )}
           </AnimatePresence>
@@ -250,7 +250,7 @@ export const Incomes: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="lg:col-span-1">
             <Input
-              placeholder={t('common.search') || 'Поиск по источнику, заметке или категории...'}
+              placeholder={t('common.search')}
               leftIcon={<Search className="w-4 h-4" />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

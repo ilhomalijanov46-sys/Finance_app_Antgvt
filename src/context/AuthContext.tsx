@@ -29,9 +29,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isSupabaseConfigured && supabase) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            const profile = await profileService.getProfile(session.user.id);
+            const profile = await profileService.getProfile(session.user.id, session.user);
             setUser(profile);
             setIsDemoMode(false);
+            localDemoStore.setDemoSession(false);
             if (profile.locale) i18n.changeLanguage(profile.locale);
             setIsLoading(false);
             return;
@@ -47,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           // If no session exists, we leave user as null so login screen displays
           setUser(null);
+          setIsDemoMode(false);
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
@@ -60,12 +62,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSupabaseConfigured && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
-          const profile = await profileService.getProfile(session.user.id);
+          const profile = await profileService.getProfile(session.user.id, session.user);
           setUser(profile);
           setIsDemoMode(false);
           localDemoStore.setDemoSession(false);
         } else if (!localDemoStore.isDemoSession()) {
           setUser(null);
+          setIsDemoMode(false);
         }
       });
 
@@ -82,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (data.user) {
-          const profile = await profileService.getProfile(data.user.id);
+          const profile = await profileService.getProfile(data.user.id, data.user);
           setUser(profile);
           setIsDemoMode(false);
           localDemoStore.setDemoSession(false);
@@ -120,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (error) throw error;
         if (data.user) {
-          const profile = await profileService.getProfile(data.user.id);
+          const profile = await profileService.getProfile(data.user.id, data.user);
           setUser(profile);
           setIsDemoMode(false);
           localDemoStore.setDemoSession(false);

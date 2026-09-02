@@ -4,34 +4,45 @@ import { Income } from '../types';
 
 export const incomeService = {
   getAll: async (userId: string): Promise<Income[]> => {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('incomes')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
-
-      if (!error && data) {
-        return data as Income[];
-      }
+    // If Demo user mode
+    if (userId === 'demo-user-777' || !isSupabaseConfigured || !supabase) {
+      return localDemoStore.getIncomes();
     }
-    // Fallback to local store
-    return localDemoStore.getIncomes().filter((i) => !userId || i.user_id === userId || userId === 'demo-user-777');
+
+    // Real Supabase user
+    const { data, error } = await supabase
+      .from('incomes')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch incomes from Supabase:', error);
+      return [];
+    }
+
+    return (data as Income[]) || [];
   },
 
   create: async (income: Omit<Income, 'id' | 'created_at'>): Promise<Income> => {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && income.user_id !== 'demo-user-777') {
       const { data, error } = await supabase
         .from('incomes')
         .insert([income])
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('Failed to create income in Supabase:', error);
+        throw error;
+      }
+
+      if (data) {
         return data as Income;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const newIncome: Income = {
       ...income,
       id: 'inc-' + Date.now(),
@@ -55,7 +66,8 @@ export const incomeService = {
         return data as Income;
       }
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getIncomes();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
     localDemoStore.setIncomes(updated);
@@ -69,7 +81,8 @@ export const incomeService = {
       const { error } = await supabase.from('incomes').delete().eq('id', id);
       if (!error) return;
     }
-    // Fallback
+
+    // Fallback for Demo mode
     const current = localDemoStore.getIncomes();
     localDemoStore.setIncomes(current.filter((item) => item.id !== id));
   },

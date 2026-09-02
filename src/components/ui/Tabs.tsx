@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 
@@ -23,8 +23,14 @@ export const Tabs: React.FC<TabsProps> = ({
   onChange,
   className,
   size = 'md',
-  layoutId = 'activeTabPill',
+  layoutId,
 }) => {
+  // The sliding pill is a shared-layout element, so its id must be unique per Tabs
+  // instance. A constant default would make two tab strips rendered at the same time
+  // share one pill, and it would fly across the screen between them.
+  const generatedLayoutId = useId();
+  const pillLayoutId = layoutId ?? `activeTabPill-${generatedLayoutId}`;
+
   return (
     <div
       className={cn(
@@ -49,7 +55,7 @@ export const Tabs: React.FC<TabsProps> = ({
           >
             {isActive && (
               <motion.div
-                layoutId={layoutId}
+                layoutId={pillLayoutId}
                 transition={{ type: 'spring', damping: 25, stiffness: 350 }}
                 className="absolute inset-0 rounded-lg bg-white dark:bg-zinc-700 shadow-apple-sm z-[-1]"
               />

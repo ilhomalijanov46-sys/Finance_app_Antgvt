@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Income, IncomeCategory, PaymentMethod } from '../../types';
+import { toDateKey } from '../../utils/formatters';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
@@ -24,17 +26,18 @@ const defaultIncomeCategories: IncomeCategory[] = [
   'other',
 ];
 
-const schema = z.object({
-  amount: z.coerce.number().positive({ message: 'Сумма должна быть больше 0' }),
-  category: z.string().min(1, { message: 'Выберите категорию' }),
-  payment_method: z.enum(['card', 'cash', 'transfer']),
-  source: z.string().optional(),
-  date: z.string().min(1, { message: 'Дата обязательна' }),
-  time: z.string().optional(),
-  note: z.string().optional(),
-});
+const buildSchema = (t: TFunction) =>
+  z.object({
+    amount: z.coerce.number().positive({ message: t('validation.amountPositive') }),
+    category: z.string().min(1, { message: t('validation.categoryRequired') }),
+    payment_method: z.enum(['card', 'cash', 'transfer']),
+    source: z.string().optional(),
+    date: z.string().min(1, { message: t('validation.dateRequired') }),
+    time: z.string().optional(),
+    note: z.string().optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 interface IncomeFormProps {
   initialData?: Income;
@@ -48,6 +51,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   onCancel,
 }) => {
   const { t } = useTranslation();
+  // Validation messages follow the interface language, so the schema is rebuilt
+  // whenever the language changes.
+  const schema = useMemo(() => buildSchema(t), [t]);
   const { addIncome, updateIncome, customCategories, addCustomCategory } = useData();
   const { user } = useAuth();
 
@@ -70,7 +76,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
       category: initialData?.category || 'salary',
       payment_method: initialData?.payment_method || 'card',
       source: initialData?.source || '',
-      date: initialData?.date || now.toISOString().split('T')[0],
+      date: initialData?.date || toDateKey(now),
       time: initialData?.time || currentTime,
       note: initialData?.note || '',
     },
@@ -140,9 +146,9 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   ];
 
   const paymentMethodOptions = [
-    { value: 'card', label: t('expenses.methods.card', { defaultValue: 'Банковская карта' }) },
-    { value: 'cash', label: t('expenses.methods.cash', { defaultValue: 'Наличные' }) },
-    { value: 'transfer', label: t('expenses.methods.transfer', { defaultValue: 'Банковский перевод' }) },
+    { value: 'card', label: t('expenses.methods.card') },
+    { value: 'cash', label: t('expenses.methods.cash') },
+    { value: 'transfer', label: t('expenses.methods.transfer') },
   ];
 
   return (
@@ -172,7 +178,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
               </>
             ) : (
               <>
-                <Plus className="w-3 h-3" /> + Своя категория
+                <Plus className="w-3 h-3" /> {t('categories.own')}
               </>
             )}
           </button>
@@ -185,12 +191,12 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
               type="text"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              placeholder="Название категории (напр. 'Криптовалюта')"
+              placeholder={t('categories.ownPlaceholderIncome')}
               className="flex-1 bg-transparent text-xs text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400"
               autoFocus
             />
             <Button size="sm" variant="primary" type="button" onClick={handleCreateCategory} className="text-xs h-7 px-2.5">
-              Добавить
+              {t('categories.add')}
             </Button>
           </div>
         )}
@@ -204,7 +210,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
       </div>
 
       <Select
-        label="Куда поступили деньги (Способ зачисления)"
+        label={t('incomes.depositMethod')}
         value={selectedPaymentMethod}
         onChange={(e) => setValue('payment_method', e.target.value as PaymentMethod, { shouldValidate: true, shouldDirty: true })}
         options={paymentMethodOptions}
@@ -213,7 +219,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
 
       <Input
         label={t('incomes.source')}
-        placeholder={t('incomes.sourcePlaceholder') || 'Например, TechCorp HQ или Клиент'}
+        placeholder={t('incomes.sourcePlaceholder')}
         error={errors.source?.message}
         {...register('source')}
       />
@@ -227,7 +233,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
         />
 
         <Input
-          label="Время операции"
+          label={t('incomes.time')}
           type="time"
           error={errors.time?.message}
           {...register('time')}
