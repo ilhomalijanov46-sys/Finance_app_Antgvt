@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,6 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
 import { DatePicker } from '../ui/DatePicker';
 import { Button } from '../ui/Button';
+import { AlertCircle } from 'lucide-react';
+import { formatDbError } from '../../utils/dbErrors';
 
 const colorOptions = [
   '#0071e3', // Apple Blue
@@ -70,7 +72,10 @@ export const GoalForm: React.FC<GoalFormProps> = ({
   const selectedColor = watch('color');
   const deadlineValue = watch('deadline');
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const onSubmit = async (values: FormValues) => {
+    setSubmitError(null);
     try {
       if (initialData) {
         await updateGoal(initialData.id, {
@@ -93,11 +98,19 @@ export const GoalForm: React.FC<GoalFormProps> = ({
       onSuccess();
     } catch (err) {
       console.error('Failed to save goal:', err);
+      setSubmitError(formatDbError(err));
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {submitError && (
+        <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+          <span>{submitError}</span>
+        </div>
+      )}
+
       <Input
         label={t('goals.name')}
         placeholder={t('goals.namePlaceholder')}

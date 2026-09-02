@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,6 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
+import { AlertCircle } from 'lucide-react';
+import { formatDbError } from '../../utils/dbErrors';
 import { getCategoryColor } from '../../utils/formatters';
 
 const expenseCategories: ExpenseCategory[] = [
@@ -76,7 +78,10 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
 
   const selectedCategory = watch('category');
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const onSubmit = async (values: FormValues) => {
+    setSubmitError(null);
     try {
       await saveBudget({
         user_id: user?.id || 'demo-user-777',
@@ -87,6 +92,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
       onSuccess();
     } catch (err) {
       console.error('Failed to save budget:', err);
+      setSubmitError(formatDbError(err));
     }
   };
 
@@ -98,6 +104,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {submitError && (
+        <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+          <span>{submitError}</span>
+        </div>
+      )}
+
       <Select
         label={t('expenses.category')}
         disabled={Boolean(initialData)}

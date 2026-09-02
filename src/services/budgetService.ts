@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { localDemoStore } from './mockData';
+import { isDemoContext } from './demoMode';
 import { Budget } from '../types';
 
 export const budgetService = {
@@ -60,12 +61,16 @@ export const budgetService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    if (isSupabaseConfigured && supabase) {
+    if (!isDemoContext() && supabase) {
       const { error } = await supabase.from('budgets').delete().eq('id', id);
-      if (!error) return;
+      if (error) {
+        console.error('Failed to delete budget in Supabase:', error);
+        throw error;
+      }
+      return;
     }
 
-    // Fallback for Demo mode
+    // Demo mode
     const current = localDemoStore.getBudgets();
     localDemoStore.setBudgets(current.filter((item) => item.id !== id));
   },

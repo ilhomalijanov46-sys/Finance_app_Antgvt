@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { localDemoStore } from './mockData';
+import { isDemoContext } from './demoMode';
 import { Expense } from '../types';
 
 export const expenseService = {
@@ -54,7 +55,7 @@ export const expenseService = {
   },
 
   update: async (id: string, updates: Partial<Omit<Expense, 'id' | 'user_id' | 'created_at'>>): Promise<Expense> => {
-    if (isSupabaseConfigured && supabase) {
+    if (!isDemoContext() && supabase) {
       const { data, error } = await supabase
         .from('expenses')
         .update(updates)
@@ -62,12 +63,16 @@ export const expenseService = {
         .select()
         .single();
 
-      if (!error && data) {
-        return data as Expense;
+      if (error) {
+        console.error('Failed to update expense in Supabase:', error);
+        throw error;
       }
+
+      if (!data) throw new Error('Expense not found');
+      return data as Expense;
     }
 
-    // Fallback for Demo mode
+    // Demo mode
     const current = localDemoStore.getExpenses();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
     localDemoStore.setExpenses(updated);
@@ -77,12 +82,16 @@ export const expenseService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    if (isSupabaseConfigured && supabase) {
+    if (!isDemoContext() && supabase) {
       const { error } = await supabase.from('expenses').delete().eq('id', id);
-      if (!error) return;
+      if (error) {
+        console.error('Failed to delete expense in Supabase:', error);
+        throw error;
+      }
+      return;
     }
 
-    // Fallback for Demo mode
+    // Demo mode
     const current = localDemoStore.getExpenses();
     localDemoStore.setExpenses(current.filter((item) => item.id !== id));
   },

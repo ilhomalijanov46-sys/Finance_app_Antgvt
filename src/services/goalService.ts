@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { localDemoStore } from './mockData';
+import { isDemoContext } from './demoMode';
 import { Goal } from '../types';
 
 export const goalService = {
@@ -53,7 +54,7 @@ export const goalService = {
   },
 
   update: async (id: string, updates: Partial<Omit<Goal, 'id' | 'user_id' | 'created_at'>>): Promise<Goal> => {
-    if (isSupabaseConfigured && supabase) {
+    if (!isDemoContext() && supabase) {
       const { data, error } = await supabase
         .from('goals')
         .update(updates)
@@ -61,12 +62,16 @@ export const goalService = {
         .select()
         .single();
 
-      if (!error && data) {
-        return data as Goal;
+      if (error) {
+        console.error('Failed to update goal in Supabase:', error);
+        throw error;
       }
+
+      if (!data) throw new Error('Goal not found');
+      return data as Goal;
     }
 
-    // Fallback for Demo mode
+    // Demo mode
     const current = localDemoStore.getGoals();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
     localDemoStore.setGoals(updated);
@@ -77,14 +82,14 @@ export const goalService = {
 
   deposit: async (id: string, amount: number): Promise<{ goal: Goal; applied: number }> => {
     let goal: Goal | undefined;
-    if (isSupabaseConfigured && supabase) {
+    if (!isDemoContext() && supabase) {
       const { data, error } = await supabase.from('goals').select('*').eq('id', id).single();
-      if (!error && data) {
-        goal = data as Goal;
+      if (error) {
+        console.error('Failed to read goal from Supabase:', error);
+        throw error;
       }
-    }
-
-    if (!goal) {
+      goal = data as Goal;
+    } else {
       goal = localDemoStore.getGoals().find((g) => g.id === id);
     }
 
@@ -97,12 +102,16 @@ export const goalService = {
   },
 
   delete: async (id: string): Promise<void> => {
-    if (isSupabaseConfigured && supabase) {
+    if (!isDemoContext() && supabase) {
       const { error } = await supabase.from('goals').delete().eq('id', id);
-      if (!error) return;
+      if (error) {
+        console.error('Failed to delete goal in Supabase:', error);
+        throw error;
+      }
+      return;
     }
 
-    // Fallback for Demo mode
+    // Demo mode
     const current = localDemoStore.getGoals();
     localDemoStore.setGoals(current.filter((item) => item.id !== id));
   },

@@ -13,7 +13,8 @@ import { Select } from '../ui/Select';
 import { DatePicker } from '../ui/DatePicker';
 import { Button } from '../ui/Button';
 import { getCategoryColor } from '../../utils/formatters';
-import { Plus, X, Tag } from 'lucide-react';
+import { Plus, X, Tag, AlertCircle } from 'lucide-react';
+import { formatDbError } from '../../utils/dbErrors';
 
 const defaultExpenseCategories: ExpenseCategory[] = [
   'groceries',
@@ -108,7 +109,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     setIsAddingCustomCategory(false);
   };
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const onSubmit = async (values: FormValues) => {
+    setSubmitError(null);
     try {
       if (initialData) {
         await updateExpense(initialData.id, {
@@ -133,6 +137,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       onSuccess();
     } catch (err) {
       console.error('Failed to save expense:', err);
+      setSubmitError(formatDbError(err));
     }
   };
 
@@ -159,6 +164,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {submitError && (
+        <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+          <span>{submitError}</span>
+        </div>
+      )}
+
       <Input
         label={t('expenses.amount')}
         type="number"
