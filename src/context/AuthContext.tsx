@@ -81,8 +81,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password = 'password123') => {
     setIsLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Check if user wants to log into the pre-seeded Demo account
+      if (
+        normalizedEmail === 'demo@example.com' ||
+        normalizedEmail === 'alex.mercer@apple.demo' ||
+        normalizedEmail === 'demo@demo.com' ||
+        normalizedEmail === 'demo@finance.app'
+      ) {
+        const demoUser = localDemoStore.getUser();
+        localDemoStore.setDemoSession(true);
+        setUser(demoUser);
+        setIsDemoMode(true);
+        if (demoUser.locale) {
+          i18n.changeLanguage(demoUser.locale);
+        }
+        return;
+      }
+
       if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
         if (data.user) {
           const profile = await profileService.getProfile(data.user.id, data.user);
@@ -94,8 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Mock fallback login for non-Supabase mode
         const mockUser: UserProfile = {
           id: 'user-' + Date.now(),
-          email,
-          name: email.split('@')[0],
+          email: normalizedEmail,
+          name: normalizedEmail.split('@')[0],
           currency: 'USD',
           locale: 'ru',
           theme: 'system',
