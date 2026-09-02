@@ -20,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  // isLoading is ONLY for initial application bootstrap / session check
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
 
@@ -36,7 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsDemoMode(false);
             localDemoStore.setDemoSession(false);
             if (profile.locale) i18n.changeLanguage(profile.locale);
-            setIsLoading(false);
             return;
           } else {
             // User does not exist, was deleted from Supabase, or no session exists
@@ -44,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localDemoStore.setDemoSession(false);
             setUser(null);
             setIsDemoMode(false);
-            setIsLoading(false);
             return;
           }
         }
@@ -83,90 +82,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password = '') => {
-    setIsLoading(true);
-    try {
-      const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
-      // Check if user wants to log into the Demo account
-      if (
-        normalizedEmail === 'demo@example.com' ||
-        normalizedEmail === 'alex.mercer@apple.demo' ||
-        normalizedEmail === 'demo@demo.com' ||
-        normalizedEmail === 'demo@finance.app'
-      ) {
-        const demoUser = localDemoStore.getUser();
-        localDemoStore.setDemoSession(true);
-        setUser(demoUser);
-        setIsDemoMode(true);
-        if (demoUser.locale) {
-          i18n.changeLanguage(demoUser.locale);
-        }
-        return;
-      }
-
-      if (!isSupabaseConfigured || !supabase) {
-        throw new Error('База данных не настроена');
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.user) {
-        throw new Error('Неверный адрес электронной почты или пароль');
-      }
-
-      const profile = await profileService.getProfile(data.user.id, data.user);
-      setUser(profile);
-      setIsDemoMode(false);
-      localDemoStore.setDemoSession(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password = '', name = '') => {
-    setIsLoading(true);
-    try {
-      const normalizedEmail = email.trim().toLowerCase();
-
-      if (!isSupabaseConfigured || !supabase) {
-        throw new Error('База данных не настроена');
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-          data: { name: name || normalizedEmail.split('@')[0] },
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.user) {
-        throw new Error('Не удалось зарегистрировать пользователя');
-      }
-
-      const profile = await profileService.getProfile(data.user.id, data.user);
-      setUser(profile);
-      setIsDemoMode(false);
-      localDemoStore.setDemoSession(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signInDemo = async () => {
-    setIsLoading(true);
-    try {
+    // Check if user wants to log into the Demo account
+    if (
+      normalizedEmail === 'demo@example.com' ||
+      normalizedEmail === 'alex.mercer@apple.demo' ||
+      normalizedEmail === 'demo@demo.com' ||
+      normalizedEmail === 'demo@finance.app'
+    ) {
       const demoUser = localDemoStore.getUser();
       localDemoStore.setDemoSession(true);
       setUser(demoUser);
@@ -174,13 +98,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (demoUser.locale) {
         i18n.changeLanguage(demoUser.locale);
       }
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('База данных не настроена');
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.user) {
+      throw new Error('Пользователь не найден или введен неверный пароль');
+    }
+
+    const profile = await profileService.getProfile(data.user.id, data.user);
+    setUser(profile);
+    setIsDemoMode(false);
+    localDemoStore.setDemoSession(false);
+  };
+
+  const signUp = async (email: string, password = '', name = '') => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('База данных не настроена');
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        data: { name: name || normalizedEmail.split('@')[0] },
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.user) {
+      throw new Error('Не удалось зарегистрировать пользователя');
+    }
+
+    const profile = await profileService.getProfile(data.user.id, data.user);
+    setUser(profile);
+    setIsDemoMode(false);
+    localDemoStore.setDemoSession(false);
+  };
+
+  const signInDemo = async () => {
+    const demoUser = localDemoStore.getUser();
+    localDemoStore.setDemoSession(true);
+    setUser(demoUser);
+    setIsDemoMode(true);
+    if (demoUser.locale) {
+      i18n.changeLanguage(demoUser.locale);
     }
   };
 
   const signOut = async () => {
-    setIsLoading(true);
     try {
       if (isSupabaseConfigured && supabase) {
         await supabase.auth.signOut().catch(() => {});
@@ -194,8 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem(key);
         }
       }
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      console.error('Sign out error:', e);
     }
   };
 

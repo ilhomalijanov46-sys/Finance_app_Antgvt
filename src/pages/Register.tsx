@@ -13,7 +13,7 @@ import { formatAuthError } from '../utils/authErrors';
 
 export const Register: React.FC = () => {
   const { t } = useTranslation();
-  const { signUp, isLoading } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
@@ -132,7 +132,7 @@ export const Register: React.FC = () => {
               type="submit"
               variant="primary"
               className="w-full h-11 text-xs font-semibold tracking-wide"
-              isLoading={submitting || isLoading}
+              isLoading={submitting}
             >
               {t('auth.signUpAction')}
             </Button>
