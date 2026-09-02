@@ -75,8 +75,7 @@ export const profileService = {
     if (isSupabaseConfigured && supabase && userId !== 'demo-user-777') {
       const { data, error } = await supabase
         .from('profiles')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', userId)
+        .upsert({ id: userId, ...updates, updated_at: new Date().toISOString() })
         .select()
         .single();
 
