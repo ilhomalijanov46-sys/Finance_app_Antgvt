@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -24,11 +24,8 @@ export const Dialog: React.FC<DialogProps> = ({
   maxWidth = 'md',
   className,
 }) => {
-  const [shouldRender, setShouldRender] = useState(isOpen);
-
   useEffect(() => {
     if (isOpen) {
-      setShouldRender(true);
       lockScroll();
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -48,7 +45,7 @@ export const Dialog: React.FC<DialogProps> = ({
   // Safety cleanup on unmount
   useEffect(() => {
     return () => {
-      unlockScroll();
+      forceUnlockScroll();
     };
   }, []);
 
@@ -59,25 +56,23 @@ export const Dialog: React.FC<DialogProps> = ({
     xl: 'max-w-4xl',
   };
 
-  if (!shouldRender || typeof document === 'undefined') return null;
+  if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <AnimatePresence
-      onExitComplete={() => {
-        setShouldRender(false);
-        forceUnlockScroll();
-      }}
-    >
+    <AnimatePresence onExitComplete={forceUnlockScroll}>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 overflow-y-auto pointer-events-auto">
+        <motion.div
+          key="dialog-overlay-wrapper"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        >
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+          <div
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 dark:bg-black/75 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50 dark:bg-black/75 backdrop-blur-sm cursor-pointer"
           />
 
           {/* Modal Content */}
@@ -114,7 +109,7 @@ export const Dialog: React.FC<DialogProps> = ({
             )}
             <div className="p-5 sm:p-6">{children}</div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body

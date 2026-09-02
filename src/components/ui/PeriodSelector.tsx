@@ -317,14 +317,18 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
         createPortal(
           <AnimatePresence onExitComplete={forceUnlockScroll}>
             {isRangeModalOpen && (
-              <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto pointer-events-auto">
+              <motion.div
+                key="period-range-overlay-wrapper"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto"
+              >
                 {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                <div
                   onClick={() => setIsRangeModalOpen(false)}
-                  className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm"
+                  className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm cursor-pointer"
                 />
 
                 {/* Modal Card */}
@@ -459,7 +463,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                     </button>
                   </div>
                 </motion.div>
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>,
           document.body
