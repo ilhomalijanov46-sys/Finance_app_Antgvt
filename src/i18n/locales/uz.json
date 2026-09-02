@@ -25,22 +25,23 @@
     "password": "Parol",
     "passwordPlaceholder": "••••••••",
     "name": "To'liq ism",
-    "namePlaceholder": "Aleks Merser",
+    "namePlaceholder": "Anvar Aliyev",
     "confirmPassword": "Parolni tasdiqlang",
-    "demoButton": "Tezkor Demo Kirish",
-    "demoBadge": "DEMO",
-    "demoDesc": "Barcha imkoniyatlarni sinab ko'ring",
     "noAccount": "Hisobingiz yo'qmi?",
     "hasAccount": "Hisobingiz bormi?",
     "signInAction": "Kirish",
     "signUpAction": "Ro'yxatdan o'tish",
     "logout": "Chiqish",
-    "secureSession": "Sessiya xavfsiz Cookie orqali saqlanadi",
+    "secureSession": "Xavfsiz shifrlangan sessiya",
     "errors": {
       "enterEmail": "Iltimos, elektron pochtangizni kiriting",
+      "enterPassword": "Iltimos, parolingizni kiriting",
+      "passwordTooShort": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
       "fillAll": "Iltimos, barcha maydonlarni to'ldiring",
-      "signInFailed": "Tizimga kirishda xatolik",
-      "signUpFailed": "Ro'yxatdan o'tishda xatolik"
+      "signInFailed": "Noto'g'ri email yoki parol",
+      "signUpFailed": "Ro'yxatdan o'tishda xatolik. Boshqa email bilan urinib ko'ring",
+      "userNotFound": "Bunday emailga ega foydalanuvchi topilmadi",
+      "userAlreadyRegistered": "Ushbu email bilan foydalanuvchi allaqachon mavjud"
     }
   },
   "dashboard": {

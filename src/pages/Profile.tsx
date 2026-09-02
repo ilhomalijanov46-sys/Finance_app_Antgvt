@@ -29,7 +29,7 @@ import {
 
 export const Profile: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user, signOut, updateUserPreferences, isDemoMode } = useAuth();
+  const { user, signOut, updateUserPreferences } = useAuth();
   const { theme, setTheme } = useTheme();
   const { incomes, expenses, budgets, goals, refetchAll } = useData();
 
@@ -170,14 +170,9 @@ export const Profile: React.FC = () => {
             )}
             <div>
               <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">
-                {name || 'Alex Mercer'}
+                {name || 'User'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400">{user?.email}</p>
-              {isDemoMode && (
-                <span className="mt-1 inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  {t('profile.demoWorkspace')}
-                </span>
-              )}
             </div>
           </div>
 
@@ -316,7 +311,7 @@ export const Profile: React.FC = () => {
             leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
             onClick={() => setIsResetConfirmOpen(true)}
           >
-            {t('profile.resetDemo')}
+            {t('profile.resetData', { defaultValue: 'Сбросить данные' })}
           </Button>
         </div>
 
@@ -365,9 +360,9 @@ export const Profile: React.FC = () => {
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={handleResetData}
-        title={t('profile.resetDemo')}
-        description={t('profile.resetDesc')}
-        confirmLabel={t('profile.resetNow')}
+        title={t('profile.resetDataTitle', { defaultValue: 'Сброс данных' })}
+        description={t('profile.resetDesc', { defaultValue: 'Все операции будут сброшены до начальных значений. Это действие необратимо.' })}
+        confirmLabel={t('profile.resetNow', { defaultValue: 'Сбросить' })}
       />
 
       {/* Category Manager Modal */}

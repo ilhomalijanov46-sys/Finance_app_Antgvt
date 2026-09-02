@@ -25,22 +25,23 @@
     "password": "Password",
     "passwordPlaceholder": "••••••••",
     "name": "Full Name",
-    "namePlaceholder": "Alex Mercer",
+    "namePlaceholder": "John Doe",
     "confirmPassword": "Confirm Password",
-    "demoButton": "Instant Demo Access",
-    "demoBadge": "DEMO",
-    "demoDesc": "Try all features with pre-seeded realistic data",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already registered?",
     "signInAction": "Sign In",
     "signUpAction": "Sign Up",
     "logout": "Log Out",
-    "secureSession": "Session secured with HTTP-level Cookies",
+    "secureSession": "Secure Encrypted Session",
     "errors": {
       "enterEmail": "Please enter your email",
+      "enterPassword": "Please enter your password",
+      "passwordTooShort": "Password must be at least 6 characters",
       "fillAll": "Please fill in all required fields",
-      "signInFailed": "Sign in failed",
-      "signUpFailed": "Sign up failed"
+      "signInFailed": "Invalid email or password",
+      "signUpFailed": "Registration failed. Please try another email",
+      "userNotFound": "User with this email was not found",
+      "userAlreadyRegistered": "User with this email is already registered"
     }
   },
   "dashboard": {
