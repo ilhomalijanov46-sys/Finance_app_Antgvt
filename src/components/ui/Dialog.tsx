@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -24,12 +24,15 @@ export const Dialog: React.FC<DialogProps> = ({
   maxWidth = 'md',
   className,
 }) => {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (isOpen) {
       lockScroll();
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-          onClose();
+          onCloseRef.current();
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -37,10 +40,8 @@ export const Dialog: React.FC<DialogProps> = ({
         unlockScroll();
         window.removeEventListener('keydown', handleKeyDown);
       };
-    } else {
-      unlockScroll();
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   // Safety cleanup on unmount
   useEffect(() => {
