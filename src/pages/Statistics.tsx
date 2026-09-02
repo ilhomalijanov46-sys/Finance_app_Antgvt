@@ -6,7 +6,8 @@ import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/common/StatCard';
 import { PeriodSelector, PeriodType, DateRange } from '../components/ui/PeriodSelector';
 import { getExpensesByCategory, getMonthlyTrends } from '../utils/analytics';
-import { getCategoryColor, formatAxisValue } from '../utils/formatters';
+import { getCategoryColor, formatAxisValue, toDateKey } from '../utils/formatters';
+import { LocaleCode } from '../types';
 import {
   BarChart,
   Bar,
@@ -27,7 +28,7 @@ import {
 } from 'lucide-react';
 
 export const Statistics: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { incomes, expenses } = useData();
   const { format, currency } = useCurrency();
 
@@ -36,22 +37,22 @@ export const Statistics: React.FC = () => {
 
   // Filter transactions based on selected period
   const filteredData = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toDateKey();
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().split('T')[0];
+    const yesterday = toDateKey(yesterdayDate);
 
     const sevenDaysAgoDate = new Date();
     sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = sevenDaysAgoDate.toISOString().split('T')[0];
+    const sevenDaysAgo = toDateKey(sevenDaysAgoDate);
 
     const thirtyDaysAgoDate = new Date();
     thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-    const thirtyDaysAgo = thirtyDaysAgoDate.toISOString().split('T')[0];
+    const thirtyDaysAgo = toDateKey(thirtyDaysAgoDate);
 
     const ninetyDaysAgoDate = new Date();
     ninetyDaysAgoDate.setDate(ninetyDaysAgoDate.getDate() - 90);
-    const ninetyDaysAgo = ninetyDaysAgoDate.toISOString().split('T')[0];
+    const ninetyDaysAgo = toDateKey(ninetyDaysAgoDate);
 
     const currentMonthStr = today.substring(0, 7);
 
@@ -98,7 +99,7 @@ export const Statistics: React.FC = () => {
     };
   }, [incomes, expenses, period, customRange]);
 
-  const monthlyTrends = getMonthlyTrends(incomes, expenses, 6);
+  const monthlyTrends = getMonthlyTrends(incomes, expenses, 6, i18n.language as LocaleCode);
 
   return (
     <div className="space-y-6 animate-fade-in">

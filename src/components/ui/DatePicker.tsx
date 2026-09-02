@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, toDateKey } from '../../utils/formatters';
 import { LocaleCode } from '../../types';
 
 export interface DatePickerProps {
@@ -133,7 +133,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
     };
 
     const handleToday = () => {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = toDateKey();
       handleSelectDate(todayStr);
     };
 
@@ -198,7 +198,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
       'Вс',
     ];
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toDateKey();
     const formattedDisplay = activeValue ? formatDate(activeValue, locale) : '';
 
     const monthsList = React.useMemo(() => {

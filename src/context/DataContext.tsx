@@ -135,22 +135,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const depositGoalMutation = useMutation({
     mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
       const targetGoal = goals.find((g) => g.id === id);
-      const updated = await goalService.deposit(id, amount);
+      const { goal: updated, applied } = await goalService.deposit(id, amount);
 
-      // Automatically record expense to deduct from net balance
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const dateStr = now.toISOString().split('T')[0];
+      // Automatically record expense to deduct from net balance. Charge only what the
+      // goal actually accepted: a deposit is capped at the target, and billing the full
+      // request would take money off the balance that never reached the goal.
+      if (applied > 0) {
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      await expenseService.create({
-        user_id: userId,
-        amount,
-        category: 'transfer',
-        payment_method: 'card',
-        date: dateStr,
-        time: timeStr,
-        note: `В цель: ${targetGoal?.title || 'Накопления'}`,
-      });
+        await expenseService.create({
+          user_id: userId,
+          amount: applied,
+          category: 'transfer',
+          payment_method: 'card',
+          date: dateStr,
+          time: timeStr,
+          note: `В цель: ${targetGoal?.title || 'Накопления'}`,
+        });
+      }
 
       return updated;
     },

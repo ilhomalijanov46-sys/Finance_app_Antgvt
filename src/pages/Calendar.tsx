@@ -5,7 +5,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Dialog } from '../components/ui/Dialog';
-import { formatDate } from '../utils/formatters';
+import { formatDate, toDateKey } from '../utils/formatters';
 import { LocaleCode } from '../types';
 import {
   ChevronLeft,
@@ -195,7 +195,7 @@ export const Calendar: React.FC = () => {
     'Вс',
   ];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toDateKey();
 
   return (
     <div className="space-y-6 animate-fade-in">

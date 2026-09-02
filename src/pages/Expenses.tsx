@@ -13,7 +13,7 @@ import { StatCard } from '../components/common/StatCard';
 import { exportToCSV } from '../utils/exportImport';
 import { Expense, ExpenseCategory, PaymentMethod } from '../types';
 import { CategoryManagerModal } from '../components/modals/CategoryManagerModal';
-import { getCategoryColor } from '../utils/formatters';
+import { getCategoryColor, toDateKey } from '../utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingDown,
@@ -69,22 +69,22 @@ export const Expenses: React.FC = () => {
 
   // Filtering
   const filteredExpenses = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toDateKey();
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().split('T')[0];
+    const yesterday = toDateKey(yesterdayDate);
 
     const sevenDaysAgoDate = new Date();
     sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = sevenDaysAgoDate.toISOString().split('T')[0];
+    const sevenDaysAgo = toDateKey(sevenDaysAgoDate);
 
     const thirtyDaysAgoDate = new Date();
     thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-    const thirtyDaysAgo = thirtyDaysAgoDate.toISOString().split('T')[0];
+    const thirtyDaysAgo = toDateKey(thirtyDaysAgoDate);
 
     const ninetyDaysAgoDate = new Date();
     ninetyDaysAgoDate.setDate(ninetyDaysAgoDate.getDate() - 90);
-    const ninetyDaysAgo = ninetyDaysAgoDate.toISOString().split('T')[0];
+    const ninetyDaysAgo = toDateKey(ninetyDaysAgoDate);
 
     const currentYearMonth = today.substring(0, 7);
 

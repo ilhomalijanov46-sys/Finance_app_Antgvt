@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { LocaleCode } from '../../types';
+import { toDateKey } from '../../utils/formatters';
 
 
 export type PeriodType =
@@ -47,7 +48,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
   // Range Picker calendar view states
   const today = useMemo(() => new Date(), []);
-  const todayStr = useMemo(() => today.toISOString().split('T')[0], [today]);
+  const todayStr = useMemo(() => toDateKey(today), [today]);
 
   const [currentViewDate, setCurrentViewDate] = useState<Date>(() => {
     if (customRange?.startDate) {
@@ -74,6 +75,18 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       }
     }
   }, [isRangeModalOpen, value, customRange]);
+
+  // Escape closes the range modal, then the dropdown
+  useEffect(() => {
+    if (!isRangeModalOpen && !isDropdownOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (isRangeModalOpen) setIsRangeModalOpen(false);
+      else setIsDropdownOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRangeModalOpen, isDropdownOpen]);
 
   // Click outside dropdown
   useEffect(() => {
@@ -311,6 +324,13 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       {/* Range DatePicker Modal via createPortal */}
       {typeof document !== 'undefined' &&
         createPortal(
+          // The layer that catches clicks is a plain div whose pointer-events depend only
+          // on the open flag, never on an animation: a stalled Framer Motion animation
+          // would otherwise leave an invisible full-screen shield over the whole page.
+          <div
+            className="fixed inset-0 z-[1000]"
+            style={{ pointerEvents: isRangeModalOpen ? 'auto' : 'none' }}
+          >
           <AnimatePresence>
             {isRangeModalOpen && (
               <motion.div
@@ -319,7 +339,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="fixed inset-0 z-[1000] flex items-center justify-center p-4 overflow-y-auto"
+                className="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto"
               >
                 {/* Backdrop */}
                 <div
@@ -461,7 +481,8 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                 </motion.div>
               </motion.div>
             )}
-          </AnimatePresence>,
+          </AnimatePresence>
+          </div>,
           document.body
         )}
     </>

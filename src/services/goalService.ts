@@ -64,7 +64,10 @@ export const goalService = {
     return result;
   },
 
-  deposit: async (id: string, amount: number): Promise<Goal> => {
+  // Returns the updated goal together with the amount that was actually credited to it.
+  // A deposit is capped at the goal's target, so the caller must know the real figure —
+  // charging the requested amount instead would silently lose the surplus.
+  deposit: async (id: string, amount: number): Promise<{ goal: Goal; applied: number }> => {
     let goal: Goal | undefined;
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('goals').select('*').eq('id', id).single();
@@ -74,11 +77,13 @@ export const goalService = {
     } else {
       goal = localDemoStore.getGoals().find((g) => g.id === id);
     }
-    
+
     if (!goal) throw new Error('Goal not found');
 
-    const newAmount = Math.min(goal.target_amount, (goal.current_amount || 0) + amount);
-    return goalService.update(id, { current_amount: newAmount });
+    const previousAmount = Number(goal.current_amount || 0);
+    const newAmount = Math.min(goal.target_amount, previousAmount + amount);
+    const updated = await goalService.update(id, { current_amount: newAmount });
+    return { goal: updated, applied: newAmount - previousAmount };
   },
 
   delete: async (id: string): Promise<void> => {

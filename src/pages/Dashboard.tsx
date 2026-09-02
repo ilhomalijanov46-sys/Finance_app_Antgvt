@@ -31,7 +31,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Income, Expense } from '../types';
+import { Income, Expense, LocaleCode } from '../types';
 
 export const Dashboard: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -71,7 +71,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const verdict = getVerdict();
-  const monthlyTrends = getMonthlyTrends(incomes, expenses, 6);
+  const monthlyTrends = getMonthlyTrends(incomes, expenses, 6, i18n.language as LocaleCode);
   const categoryExpenses = getExpensesByCategory(expenses);
   const topExpenseCategory = categoryExpenses[0];
 

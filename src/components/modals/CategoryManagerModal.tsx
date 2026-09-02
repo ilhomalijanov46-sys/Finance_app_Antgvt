@@ -80,22 +80,62 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
   const [isCreating, setIsCreating] = useState(false);
   const [deletingCatId, setDeletingCatId] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
+  // This modal stays mounted between openings, so its state has to be reset explicitly —
+  // otherwise it reopens on whichever tab was left behind, ignoring `defaultType`. The
+  // reset runs while rendering rather than in an effect so the dialog never paints one
+  // frame on the previous tab before correcting itself.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setActiveTab(defaultType);
+      setNewCatName('');
+      setIsCreating(false);
+      setDeletingCatId(null);
+      setNameError(null);
+    }
+  }
+
+  const typeLabel = t(activeTab === 'income' ? 'categories.typeIncome' : 'categories.typeExpense');
   const currentCustomCats = customCategories.filter((c) => c.type === activeTab);
   const defaultList = activeTab === 'income' ? defaultIncomeCategories : defaultExpenseCategories;
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCatName.trim()) return;
+    const name = newCatName.trim();
+    if (!name) return;
+
+    // Two categories with the same name are indistinguishable everywhere else in the app:
+    // the filters, the charts and the usage counters all key off the name, so they would
+    // silently merge. Reject the duplicate instead of creating it.
+    const normalized = name.toLocaleLowerCase();
+    const clashesWithCustom = currentCustomCats.some(
+      (c) => c.name.trim().toLocaleLowerCase() === normalized
+    );
+    const clashesWithSystem = defaultList.some(
+      (key) =>
+        key.toLocaleLowerCase() === normalized ||
+        t(`${activeTab === 'income' ? 'incomes' : 'expenses'}.categories.${key}`)
+          .trim()
+          .toLocaleLowerCase() === normalized
+    );
+
+    if (clashesWithCustom || clashesWithSystem) {
+      setNameError(t('categories.duplicate'));
+      return;
+    }
 
     await addCustomCategory({
-      name: newCatName.trim(),
+      name,
       type: activeTab,
       color: selectedColor,
       icon: 'Tag',
     });
 
     setNewCatName('');
+    setNameError(null);
     setIsCreating(false);
   };
 
@@ -114,8 +154,8 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         setDeletingCatId(null);
         onClose();
       }}
-      title="Управление категориями"
-      description="Добавляйте персональные категории или просматривайте системные"
+      title={t('categories.title')}
+      description={t('categories.description')}
       maxWidth="md"
     >
       <div className="space-y-4">
@@ -123,14 +163,15 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         <div className="flex justify-center">
           <Tabs
             tabs={[
-              { id: 'expense', label: 'Категории расходов' },
-              { id: 'income', label: 'Категории доходов' },
+              { id: 'expense', label: t('categories.expenseTab') },
+              { id: 'income', label: t('categories.incomeTab') },
             ]}
             activeTab={activeTab}
             onChange={(id) => {
               setActiveTab(id as 'expense' | 'income');
               setIsCreating(false);
               setDeletingCatId(null);
+              setNameError(null);
             }}
             size="sm"
             layoutId="categoryManagerTabPill"
@@ -146,7 +187,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             leftIcon={<Plus className="w-4 h-4 text-blue-500" />}
             onClick={() => setIsCreating(true)}
           >
-            Добавить категорию ({activeTab === 'income' ? 'доход' : 'расход'})
+            {t('categories.addFor', { type: typeLabel })}
           </Button>
         ) : (
           <form
@@ -155,28 +196,37 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
-                Новая категория ({activeTab === 'income' ? 'доход' : 'расход'})
+                {t('categories.newFor', { type: typeLabel })}
               </span>
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
                 className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 font-medium"
               >
-                Отмена
+                {t('common.cancel')}
               </button>
             </div>
 
             <Input
-              placeholder="Например: Фитнес, Криптовалюта, Образование"
+              placeholder={t('categories.namePlaceholder')}
               value={newCatName}
-              onChange={(e) => setNewCatName(e.target.value)}
+              onChange={(e) => {
+                setNewCatName(e.target.value);
+                if (nameError) setNameError(null);
+              }}
               autoFocus
             />
+
+            {nameError && (
+              <p className="text-[11px] font-semibold text-rose-500 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 shrink-0" /> {nameError}
+              </p>
+            )}
 
             {/* Color Palette */}
             <div>
               <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block mb-1.5">
-                Выберите цвет:
+                {t('categories.chooseColor')}
               </span>
               <div className="flex flex-wrap gap-2">
                 {PRESET_COLORS.map((c) => (
@@ -201,7 +251,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                 className="h-8 text-xs shrink-0"
                 onClick={() => setIsCreating(false)}
               >
-                Отмена
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -210,7 +260,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                 className="h-8 text-xs shrink-0"
                 disabled={!newCatName.trim()}
               >
-                Создать
+                {t('categories.create')}
               </Button>
             </div>
           </form>
@@ -220,7 +270,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-              Ваши категории ({currentCustomCats.length})
+              {t('categories.yours', { n: currentCustomCats.length })}
             </h4>
           </div>
 
@@ -228,9 +278,9 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
             {currentCustomCats.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4 rounded-2xl bg-slate-50/50 dark:bg-zinc-800/30 border border-slate-100 dark:border-zinc-800/60 text-slate-400 dark:text-zinc-500">
                 <FolderPlus className="w-7 h-7 mb-1.5 opacity-40 text-blue-500" />
-                <p className="text-xs font-medium">Нет созданных категорий</p>
+                <p className="text-xs font-medium">{t('categories.emptyTitle')}</p>
                 <p className="text-[11px] opacity-75 mt-0.5">
-                  Нажмите кнопку выше, чтобы добавить свою категорию
+                  {t('categories.emptyDesc')}
                 </p>
               </div>
             ) : (
@@ -256,7 +306,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                           {cat.name}
                         </span>
                         <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-zinc-700/70 text-slate-600 dark:text-zinc-300 font-medium">
-                          {count} опер.
+                          {t('categories.opsCount', { n: count })}
                         </span>
                       </div>
 
@@ -266,14 +316,14 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                           type="button"
                           onClick={() => setDeletingCatId(cat.id)}
                           className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center shrink-0 transition-colors"
-                          title="Удалить категорию"
+                          title={t('categories.deleteTitle')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       ) : (
                         <div className="flex items-center gap-1.5 shrink-0 animate-fade-in">
                           <span className="text-[11px] text-rose-500 font-semibold hidden sm:inline">
-                            Удалить?
+                            {t('categories.deleteConfirm')}
                           </span>
                           <button
                             type="button"
@@ -283,14 +333,14 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                             }}
                             className="px-2 py-1 text-[11px] font-bold rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-xs"
                           >
-                            Да
+                            {t('common.yes')}
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeletingCatId(null)}
                             className="px-2 py-1 text-[11px] font-semibold rounded-lg bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 transition-colors"
                           >
-                            Нет
+                            {t('common.no')}
                           </button>
                         </div>
                       )}
@@ -306,7 +356,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800/60">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-slate-400" /> Системные категории ({defaultList.length})
+              <Lock className="w-3 h-3 text-slate-400" /> {t('categories.systemTitle', { n: defaultList.length })}
             </h4>
           </div>
 
@@ -334,7 +384,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         {/* Footer */}
         <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/60 flex items-center justify-between">
           <span className="text-[11px] text-slate-400 dark:text-zinc-500 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" /> Системные категории нельзя удалить
+            <AlertCircle className="w-3 h-3" /> {t('categories.systemNote')}
           </span>
           <Button
             variant="primary"
@@ -346,7 +396,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
               onClose();
             }}
           >
-            Готово
+            {t('categories.done')}
           </Button>
         </div>
       </div>
