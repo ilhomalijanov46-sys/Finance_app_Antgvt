@@ -27,31 +27,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         if (isSupabaseConfigured && supabase) {
+          // Check if there is an active local session
           const { data: { session } } = await supabase.auth.getSession();
+
           if (session?.user) {
-            const profile = await profileService.getProfile(session.user.id, session.user);
-            setUser(profile);
-            setIsDemoMode(false);
-            localDemoStore.setDemoSession(false);
-            if (profile.locale) i18n.changeLanguage(profile.locale);
-            setIsLoading(false);
-            return;
+            // Verify with the Supabase server that the user is still valid and not deleted in DB
+            const { data: { user: serverUser }, error: userError } = await supabase.auth.getUser();
+
+            if (serverUser && !userError) {
+              const profile = await profileService.getProfile(serverUser.id, serverUser);
+              setUser(profile);
+              setIsDemoMode(false);
+              localDemoStore.setDemoSession(false);
+              if (profile.locale) i18n.changeLanguage(profile.locale);
+              setIsLoading(false);
+              return;
+            } else {
+              // User was deleted from Supabase server or token is invalid
+              console.warn('User deleted from Supabase or invalid session. Clearing local session.');
+              await supabase.auth.signOut().catch(() => {});
+              localDemoStore.setDemoSession(false);
+              setUser(null);
+              setIsDemoMode(false);
+              setIsLoading(false);
+              return;
+            }
           }
         }
 
-        // Check if demo session exists or default to demo if user was previously in demo
+        // Check if demo session was explicitly activated
         if (localDemoStore.isDemoSession()) {
           const demoUser = localDemoStore.getUser();
           setUser(demoUser);
           setIsDemoMode(true);
           if (demoUser.locale) i18n.changeLanguage(demoUser.locale);
         } else {
-          // If no session exists, we leave user as null so login screen displays
           setUser(null);
           setIsDemoMode(false);
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
+        setUser(null);
+        setIsDemoMode(false);
       } finally {
         setIsLoading(false);
       }
@@ -60,15 +77,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     if (isSupabaseConfigured && supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        if (session?.user) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          if (!localDemoStore.isDemoSession()) {
+            setUser(null);
+            setIsDemoMode(false);
+          }
+        } else if (session?.user) {
           const profile = await profileService.getProfile(session.user.id, session.user);
           setUser(profile);
           setIsDemoMode(false);
           localDemoStore.setDemoSession(false);
-        } else if (!localDemoStore.isDemoSession()) {
-          setUser(null);
-          setIsDemoMode(false);
         }
       });
 
@@ -83,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      // Check if user wants to log into the pre-seeded Demo account
+      // Check if user wants to log into the Demo account
       if (
         normalizedEmail === 'demo@example.com' ||
         normalizedEmail === 'alex.mercer@apple.demo' ||
@@ -101,16 +120,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-        if (error) throw error;
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+
+        if (error) {
+          throw error;
+        }
+
         if (data.user) {
           const profile = await profileService.getProfile(data.user.id, data.user);
           setUser(profile);
           setIsDemoMode(false);
           localDemoStore.setDemoSession(false);
+        } else {
+          throw new Error('Неверный адрес электронной почты или пароль');
         }
       } else {
-        // Mock fallback login for non-Supabase mode
+        // Mock fallback login ONLY if Supabase is not configured
         const mockUser: UserProfile = {
           id: 'user-' + Date.now(),
           email: normalizedEmail,
@@ -132,26 +160,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password = 'password123', name = '') => {
     setIsLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       if (isSupabaseConfigured && supabase) {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: {
-            data: { name: name || email.split('@')[0] },
+            data: { name: name || normalizedEmail.split('@')[0] },
           },
         });
-        if (error) throw error;
+
+        if (error) {
+          throw error;
+        }
+
         if (data.user) {
           const profile = await profileService.getProfile(data.user.id, data.user);
           setUser(profile);
           setIsDemoMode(false);
           localDemoStore.setDemoSession(false);
+        } else {
+          throw new Error('Не удалось зарегистрировать аккаунт');
         }
       } else {
         const mockUser: UserProfile = {
           id: 'user-' + Date.now(),
-          email,
-          name: name || email.split('@')[0],
+          email: normalizedEmail,
+          name: name || normalizedEmail.split('@')[0],
           currency: 'USD',
           locale: 'ru',
           theme: 'system',
