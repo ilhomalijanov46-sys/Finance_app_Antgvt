@@ -201,7 +201,10 @@
     "remaining": "Remaining: {{value}}",
     "depositMore": "Add more",
     "transferNote": "To goal: {{title}}",
-    "defaultTitle": "Savings"
+    "defaultTitle": "Savings",
+    "alreadyComplete": "This goal is already complete — there is nothing left to add",
+    "depositFailed": "Could not add the funds. Please try again",
+    "capped": "Credited {{value}} — that was all the goal had left"
   },
   "calendar": {
     "title": "Cash Flow Calendar",

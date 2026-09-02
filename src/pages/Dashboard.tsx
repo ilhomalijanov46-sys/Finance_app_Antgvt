@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useData } from '../context/DataContext';
 import { useCurrency } from '../hooks/useCurrency';
@@ -9,8 +9,8 @@ import { Dialog } from '../components/ui/Dialog';
 import { IncomeForm } from '../components/forms/IncomeForm';
 import { ExpenseForm } from '../components/forms/ExpenseForm';
 import { GoalForm } from '../components/forms/GoalForm';
-import { getMonthlyTrends, getExpensesByCategory } from '../utils/analytics';
-import { formatDateTime, formatAxisValue } from '../utils/formatters';
+import { getMonthlyTrends, getExpensesByCategory, calculateSummary } from '../utils/analytics';
+import { formatDateTime, formatAxisValue, toDateKey } from '../utils/formatters';
 import {
   TrendingUp,
   TrendingDown,
@@ -40,23 +40,35 @@ export const Dashboard: React.FC = () => {
 
   const [activeModal, setActiveModal] = useState<'income' | 'expense' | 'goal' | null>(null);
 
+  // The KPI cards and the verdict are all phrased in monthly terms ("Доходы за месяц",
+  // "Расходы превышают 85% ежемесячного дохода"), so they need a summary scoped to the
+  // current month. `summary` from the context stays all-time — that is what the balance
+  // headline above them means.
+  const monthSummary = useMemo(() => {
+    const currentMonth = toDateKey().slice(0, 7);
+    return calculateSummary(
+      incomes.filter((i) => i.date.startsWith(currentMonth)),
+      expenses.filter((e) => e.date.startsWith(currentMonth))
+    );
+  }, [incomes, expenses]);
+
   // Financial Verdict determination
   const getVerdict = () => {
-    if (summary.totalIncome === 0 && summary.totalExpense === 0) {
+    if (monthSummary.totalIncome === 0 && monthSummary.totalExpense === 0) {
       return {
         badge: t('dashboard.verdict.balanced'),
         sub: t('dashboard.verdictSub.balanced'),
         color: '#0071e3',
       };
     }
-    if (summary.savingsRate >= 30) {
+    if (monthSummary.savingsRate >= 30) {
       return {
         badge: t('dashboard.verdict.great'),
         sub: t('dashboard.verdictSub.great'),
         color: '#10b981',
       };
     }
-    if (summary.savingsRate >= 15) {
+    if (monthSummary.savingsRate >= 15) {
       return {
         badge: t('dashboard.verdict.balanced'),
         sub: t('dashboard.verdictSub.balanced'),
@@ -159,21 +171,21 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title={t('dashboard.monthlyIncome')}
-          value={summary.totalIncome}
+          value={monthSummary.totalIncome}
           icon={<TrendingUp className="w-4 h-4" />}
           highlightColor="#10b981"
           trend={{ value: 8.4, isPositive: true }}
         />
         <StatCard
           title={t('dashboard.monthlyExpense')}
-          value={summary.totalExpense}
+          value={monthSummary.totalExpense}
           icon={<TrendingDown className="w-4 h-4" />}
           highlightColor="#f43f5e"
           trend={{ value: 3.2, isPositive: false }}
         />
         <StatCard
           title={t('dashboard.savingsRate')}
-          value={summary.savingsRate}
+          value={monthSummary.savingsRate}
           isCurrency={false}
           suffix="%"
           icon={<Percent className="w-4 h-4" />}

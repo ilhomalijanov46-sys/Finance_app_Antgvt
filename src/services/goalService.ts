@@ -74,7 +74,13 @@ export const goalService = {
       if (!error && data) {
         goal = data as Goal;
       }
-    } else {
+    }
+
+    // Fall back to the local store whenever the remote lookup produced nothing — the same
+    // shape every other method here uses. Reading it only in an `else` branch meant that a
+    // configured but empty Supabase made every deposit throw "Goal not found", because the
+    // demo goals exist only in local storage.
+    if (!goal) {
       goal = localDemoStore.getGoals().find((g) => g.id === id);
     }
 

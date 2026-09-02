@@ -201,7 +201,10 @@
     "remaining": "Qoldi: {{value}}",
     "depositMore": "Yana qo'shish",
     "transferNote": "Maqsadga: {{title}}",
-    "defaultTitle": "Jamgarma"
+    "defaultTitle": "Jamgarma",
+    "alreadyComplete": "Maqsadga allaqachon erishilgan — qo'shadigan narsa yo'q",
+    "depositFailed": "Mablag' qo'shib bo'lmadi. Qaytadan urinib ko'ring",
+    "capped": "{{value}} kiritildi — maqsadgacha shuncha qolgan edi"
   },
   "calendar": {
     "title": "Moliyaviy taqvim",

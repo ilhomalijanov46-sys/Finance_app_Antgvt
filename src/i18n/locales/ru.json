@@ -201,7 +201,10 @@
     "remaining": "Осталось: {{value}}",
     "depositMore": "Пополнить еще",
     "transferNote": "В цель: {{title}}",
-    "defaultTitle": "Накопления"
+    "defaultTitle": "Накопления",
+    "alreadyComplete": "Цель уже достигнута — пополнять больше нечего",
+    "depositFailed": "Не удалось пополнить цель. Попробуйте ещё раз",
+    "capped": "Зачислено {{value}} — остаток до цели был меньше суммы"
   },
   "calendar": {
     "title": "Финансовый календарь",
