@@ -24,11 +24,11 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      setError('Пожалуйста, введите ваш email');
+      setError(t('auth.errors.enterEmail'));
       return;
     }
     if (!password) {
-      setError('Пожалуйста, введите пароль');
+      setError(t('auth.errors.enterPassword'));
       return;
     }
 
@@ -39,7 +39,7 @@ export const Login: React.FC = () => {
       navigate('/');
     } catch (err: unknown) {
       console.error('Sign in error:', err);
-      setError(formatAuthError(err, 'Не удалось войти. Проверьте данные и попробуйте снова'));
+      setError(formatAuthError(err, 'auth.errors.signInFailed'));
     } finally {
       setSubmitting(false);
     }

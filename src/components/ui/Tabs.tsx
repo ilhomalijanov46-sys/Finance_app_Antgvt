@@ -33,6 +33,7 @@ export const Tabs: React.FC<TabsProps> = ({
 
   return (
     <div
+      role="tablist"
       className={cn(
         'inline-flex items-center rounded-xl p-1 bg-slate-200/60 dark:bg-zinc-800/80 backdrop-blur-md border border-slate-300/30 dark:border-zinc-700/50',
         className
@@ -44,6 +45,8 @@ export const Tabs: React.FC<TabsProps> = ({
           <button
             key={tab.id}
             type="button"
+            role="tab"
+            aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
               'relative flex items-center justify-center gap-1.5 font-medium transition-colors z-10',

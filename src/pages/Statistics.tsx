@@ -155,11 +155,30 @@ export const Statistics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Inflow vs Outflow Bar Chart */}
         <Card variant="glass" padding="lg">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-blue-500" />
-              <span>{t('statistics.incomeVsExpense')}</span>
-            </h3>
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-blue-500" />
+                <span>{t('statistics.incomeVsExpense')}</span>
+              </h3>
+              {/* This chart is always the last six months, unlike the KPI cards above it,
+                  which follow the period selector. Saying so stops the two from looking
+                  like they disagree. */}
+              <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5 ml-6">
+                {t('statistics.chartRange')}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 text-[11px] font-medium shrink-0">
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                {t('statistics.legendIncome')}
+              </span>
+              <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                {t('statistics.legendExpense')}
+              </span>
+            </div>
           </div>
 
           <div className="h-72 w-full pt-4">
@@ -184,7 +203,7 @@ export const Statistics: React.FC = () => {
                             <span>{t('incomes.title')}:</span>
                             <span>{format(Number(payload[0]?.value || 0))}</span>
                           </div>
-                          <div className="flex items-center justify-between gap-3 text-blue-600 dark:text-blue-400 font-semibold">
+                          <div className="flex items-center justify-between gap-3 text-rose-600 dark:text-rose-400 font-semibold">
                             <span>{t('expenses.title')}:</span>
                             <span>{format(Number(payload[1]?.value || 0))}</span>
                           </div>
@@ -195,7 +214,7 @@ export const Statistics: React.FC = () => {
                   }}
                 />
                 <Bar dataKey="income" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="expense" fill="#0071e3" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                <Bar dataKey="expense" fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -306,7 +325,7 @@ export const Statistics: React.FC = () => {
 
               <div className="flex items-center gap-4 text-xs shrink-0">
                 <span className="text-slate-500 dark:text-zinc-400">
-                  {item.count} {t('statistics.operationsCount')} ({Math.round(item.percentage)}%)
+                  {t('statistics.operations', { count: item.count })} ({Math.round(item.percentage)}%)
                 </span>
                 <span className="font-bold text-slate-900 dark:text-zinc-100">
                   {format(item.total)}

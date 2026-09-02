@@ -209,6 +209,7 @@ export const Calendar: React.FC = () => {
           {/* Quick Month Selector */}
           <select
             value={month}
+            aria-label={t('calendar.selectMonth')}
             onChange={(e) => setSpecificMonth(Number(e.target.value))}
             className="h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm capitalize"
           >
@@ -222,6 +223,7 @@ export const Calendar: React.FC = () => {
           {/* Quick Year Selector */}
           <select
             value={year}
+            aria-label={t('calendar.selectYear')}
             onChange={(e) => setSpecificYear(Number(e.target.value))}
             className="h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm"
           >
@@ -324,18 +326,41 @@ export const Calendar: React.FC = () => {
                 </div>
 
                 {hasActivity && (
-                  <div className="space-y-1 mt-1 text-[10px] sm:text-[11px] font-semibold truncate">
-                    {cell.totalInc > 0 && (
-                      <div className="text-emerald-600 dark:text-emerald-400 truncate">
-                        +{format(cell.totalInc)}
-                      </div>
-                    )}
-                    {cell.totalExp > 0 && (
-                      <div className="text-slate-700 dark:text-zinc-300 truncate">
-                        -{format(cell.totalExp)}
-                      </div>
-                    )}
-                  </div>
+                  <>
+                    {/* A phone gives each of the seven columns ~45px, which is not enough
+                        for a currency amount — the label truncated to "+2…" and told the
+                        user nothing. Below `sm` the day is marked with dots instead, and
+                        the figures are in the day's details dialog. */}
+                    <div
+                      className="flex items-center gap-1 mt-1 sm:hidden"
+                      title={[
+                        cell.totalInc > 0 ? `+${format(cell.totalInc)}` : '',
+                        cell.totalExp > 0 ? `−${format(cell.totalExp)}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join('  ')}
+                    >
+                      {cell.totalInc > 0 && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      )}
+                      {cell.totalExp > 0 && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      )}
+                    </div>
+
+                    <div className="hidden sm:block space-y-1 mt-1 text-[11px] font-semibold">
+                      {cell.totalInc > 0 && (
+                        <div className="text-emerald-600 dark:text-emerald-400 truncate">
+                          +{format(cell.totalInc)}
+                        </div>
+                      )}
+                      {cell.totalExp > 0 && (
+                        <div className="text-rose-600 dark:text-rose-400 truncate">
+                          −{format(cell.totalExp)}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
 
                 {!hasActivity && <div className="h-4" />}
@@ -362,8 +387,8 @@ export const Calendar: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-500 dark:text-zinc-400">{t('calendar.expenses')}:</span>
-                <p className="text-sm font-bold text-slate-900 dark:text-zinc-100 mt-0.5">
-                  -{format(selectedDayData.totalExp)}
+                <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                  −{format(selectedDayData.totalExp)}
                 </p>
               </div>
             </div>
@@ -432,8 +457,8 @@ export const Calendar: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <span className="font-bold text-slate-900 dark:text-zinc-100 shrink-0">
-                        -{format(exp.amount)}
+                      <span className="font-bold text-rose-600 dark:text-rose-400 shrink-0">
+                        −{format(exp.amount)}
                       </span>
                     </div>
                   ))}

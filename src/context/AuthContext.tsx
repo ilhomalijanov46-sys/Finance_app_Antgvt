@@ -10,7 +10,11 @@ interface AuthContextType {
   isLoading: boolean;
   isDemoMode: boolean;
   signIn: (email: string, password?: string) => Promise<void>;
-  signUp: (email: string, password?: string, name?: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password?: string,
+    name?: string
+  ) => Promise<{ needsEmailConfirmation: boolean }>;
   signInDemo: () => Promise<void>;
   signOut: () => Promise<void>;
   updateUserPreferences: (updates: Partial<UserProfile>) => Promise<void>;
@@ -102,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!isSupabaseConfigured || !supabase) {
-      throw new Error('База данных не настроена');
+      throw new Error(i18n.t('auth.errors.notConfigured'));
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -115,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!data?.user) {
-      throw new Error('Пользователь не найден или введен неверный пароль');
+      throw new Error(i18n.t('auth.errors.signInFailed'));
     }
 
     const profile = await profileService.getProfile(data.user.id, data.user);
@@ -128,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isSupabaseConfigured || !supabase) {
-      throw new Error('База данных не настроена');
+      throw new Error(i18n.t('auth.errors.notConfigured'));
     }
 
     const { data, error } = await supabase.auth.signUp({
@@ -144,13 +148,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!data?.user) {
-      throw new Error('Не удалось зарегистрировать пользователя');
+      throw new Error(i18n.t('auth.errors.signUpFailed'));
+    }
+
+    // With email confirmation enabled, Supabase returns the user but no session. Signing
+    // the visitor in anyway put them inside the app with no JWT, so every read and write
+    // was rejected by RLS and the account looked broken and empty. Tell them to confirm
+    // instead.
+    if (!data.session) {
+      return { needsEmailConfirmation: true };
     }
 
     const profile = await profileService.getProfile(data.user.id, data.user);
     setUser(profile);
     setIsDemoMode(false);
     localDemoStore.setDemoSession(false);
+    return { needsEmailConfirmation: false };
   };
 
   const signInDemo = async () => {
@@ -173,7 +186,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsDemoMode(false);
       // Clean up any remaining localStorage auth keys
       for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('sb-') || key.startsWith('pft_demo') || key === 'pft_is_demo') {
+        if (
+          key.startsWith('sb-') ||
+          key.startsWith('pft_demo') ||
+          key.startsWith('pft_is_demo') ||
+          key === 'pft_custom_categories'
+        ) {
           localStorage.removeItem(key);
         }
       }

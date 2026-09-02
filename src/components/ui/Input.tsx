@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes, forwardRef } from 'react';
+import React, { InputHTMLAttributes, forwardRef, useId } from 'react';
 import { cn } from '../../utils/cn';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -11,7 +11,9 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, leftIcon, rightIcon, helperText, id, ...props }, ref) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const generatedId = useId();
+    const inputId = id || generatedId;
+    const messageId = `${inputId}-message`;
 
     return (
       <div className="w-full space-y-1.5">
@@ -32,6 +34,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             id={inputId}
             ref={ref}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error || helperText ? messageId : undefined}
             className={cn(
               'w-full text-sm rounded-xl px-3.5 py-2.5 outline-none transition-colors duration-150',
               'bg-slate-100/70 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800/80',
@@ -53,9 +57,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error ? (
-          <p className="text-xs text-rose-500 dark:text-rose-400 ml-0.5 animate-fade-in font-medium">{error}</p>
+          <p
+            id={messageId}
+            role="alert"
+            className="text-xs text-rose-500 dark:text-rose-400 ml-0.5 animate-fade-in font-medium"
+          >
+            {error}
+          </p>
         ) : helperText ? (
-          <p className="text-xs text-slate-500 dark:text-zinc-400 ml-0.5">{helperText}</p>
+          <p id={messageId} className="text-xs text-slate-500 dark:text-zinc-400 ml-0.5">
+            {helperText}
+          </p>
         ) : null}
       </div>
     );

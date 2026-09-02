@@ -1,3 +1,5 @@
+import i18n from '../i18n/i18n';
+
 /**
  * Formats Supabase/PostgREST errors raised while saving a record into friendly
  * messages. Mirrors formatAuthError, but for data mutations.
@@ -9,43 +11,52 @@ interface PostgrestLikeError {
   hint?: string;
 }
 
-export function formatDbError(error: unknown, fallbackMessage = 'Не удалось сохранить запись'): string {
-  if (!error) return fallbackMessage;
+export function formatDbError(error: unknown, fallbackKey = 'dbErrors.generic'): string {
+  const t = i18n.t.bind(i18n);
+  if (!error) return t(fallbackKey);
 
   const err = (typeof error === 'object' ? error : {}) as PostgrestLikeError;
   const rawMessage = err.message || (error instanceof Error ? error.message : String(error));
   const lower = rawMessage.toLowerCase();
 
-  // The table is missing a column the app writes — the schema migration has not
-  // been applied to this Supabase project yet.
-  if (err.code === 'PGRST204' || err.code === '42703' || lower.includes('does not exist')) {
-    return `В базе данных нет нужной колонки (${rawMessage}). Примените миграции из supabase/migrations в SQL-редакторе Supabase`;
+  // The schema migration has not been applied to this Supabase project yet: PGRST204 is
+  // a missing column, PGRST205 a missing table ("Could not find the table ... in the
+  // schema cache"), 42P01/42703 the same seen from Postgres itself.
+  if (
+    err.code === 'PGRST204' ||
+    err.code === 'PGRST205' ||
+    err.code === '42703' ||
+    err.code === '42P01' ||
+    lower.includes('does not exist') ||
+    lower.includes('could not find the table')
+  ) {
+    return t('dbErrors.missingSchema', { details: rawMessage });
   }
 
   // RLS rejected the write: the session no longer matches the user_id being saved.
   if (err.code === '42501' || lower.includes('row-level security') || lower.includes('violates row-level')) {
-    return 'Нет прав на запись. Войдите в аккаунт заново и попробуйте ещё раз';
+    return t('dbErrors.rls');
   }
 
   if (err.code === '23503' || lower.includes('foreign key')) {
-    return 'Профиль пользователя не найден в базе. Войдите заново, чтобы он создался';
+    return t('dbErrors.foreignKey');
   }
 
   if (err.code === '23505' || lower.includes('duplicate key')) {
-    return 'Такая запись уже существует';
+    return t('dbErrors.duplicate');
   }
 
   if (err.code === '23514' || lower.includes('check constraint')) {
-    return 'Введённые данные не прошли проверку. Проверьте сумму и категорию';
+    return t('dbErrors.checkConstraint');
   }
 
   if (lower.includes('jwt') || lower.includes('token is expired')) {
-    return 'Сессия истекла. Войдите в аккаунт заново';
+    return t('dbErrors.jwtExpired');
   }
 
   if (lower.includes('network') || lower.includes('fetch failed') || lower.includes('failed to fetch')) {
-    return 'Ошибка подключения к серверу. Проверьте интернет-соединение';
+    return t('dbErrors.network');
   }
 
-  return rawMessage || fallbackMessage;
+  return rawMessage || t(fallbackKey);
 }

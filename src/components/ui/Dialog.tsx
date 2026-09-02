@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 
 export interface DialogProps {
@@ -26,6 +27,8 @@ export const Dialog: React.FC<DialogProps> = ({
   maxWidth = 'md',
   className,
 }) => {
+  const { t } = useTranslation();
+  const closeLabel = t('common.close');
   const dialogId = useId();
   // Track whether exit animation is in progress so we keep the portal mounted
   const [showPortal, setShowPortal] = useState(isOpen);
@@ -84,6 +87,67 @@ export const Dialog: React.FC<DialogProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // While a modal is open the page behind it must not scroll, and focus must not be able
+  // to wander onto the controls underneath — both were possible before.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+
+    const { overflow, paddingRight } = document.body.style;
+    // Compensating for the scrollbar keeps the page from shifting sideways as it locks.
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
+
+    const focusables = () =>
+      Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.offsetParent !== null);
+
+    // Move focus into the dialog so a keyboard user lands inside it rather than at the
+    // top of the page behind.
+    const firstFocus = window.setTimeout(() => {
+      const items = focusables();
+      (items[0] ?? panelRef.current)?.focus();
+    }, 0);
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey && (active === first || !panelRef.current?.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTab, true);
+
+    return () => {
+      window.clearTimeout(firstFocus);
+      document.removeEventListener('keydown', handleTab, true);
+      document.body.style.overflow = overflow;
+      document.body.style.paddingRight = paddingRight;
+      previouslyFocused.current?.focus?.();
+    };
+  }, [isOpen]);
+
   // Called after Framer Motion finishes the exit animation (best case — the timer above
   // is the fallback for when it never fires)
   const handleExitComplete = useCallback(() => {
@@ -131,6 +195,12 @@ export const Dialog: React.FC<DialogProps> = ({
 
             {/* Modal Content */}
             <motion.div
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={title ? `${dialogId}-title` : undefined}
+              aria-describedby={description ? `${dialogId}-description` : undefined}
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
@@ -148,12 +218,15 @@ export const Dialog: React.FC<DialogProps> = ({
                 <div className="flex items-start justify-between p-5 sm:p-6 pb-4 border-b border-slate-100 dark:border-zinc-800/60 rounded-t-3xl">
                   <div className="space-y-1 min-w-0 pr-4">
                     {title && (
-                      <h2 className="text-lg font-bold tracking-tight truncate">
+                      <h2 id={`${dialogId}-title`} className="text-lg font-bold tracking-tight truncate">
                         {title}
                       </h2>
                     )}
                     {description && (
-                      <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                      <p
+                        id={`${dialogId}-description`}
+                        className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed"
+                      >
                         {description}
                       </p>
                     )}
@@ -161,6 +234,7 @@ export const Dialog: React.FC<DialogProps> = ({
                   <button
                     type="button"
                     onClick={onClose}
+                    aria-label={closeLabel}
                     className="shrink-0 rounded-full p-1.5 text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                   >
                     <X className="w-4 h-4" />

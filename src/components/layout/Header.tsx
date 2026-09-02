@@ -30,6 +30,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, isMobileMenuOp
           <button
             type="button"
             onClick={onOpenMobileMenu}
+            aria-label={t('nav.menu')}
+            aria-expanded={isMobileMenuOpen}
             className="md:hidden p-2 rounded-xl text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

@@ -77,6 +77,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   });
 
   const selectedCategory = watch('category');
+  const selectedPeriod = watch('period');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -102,6 +103,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
     color: getCategoryColor(cat),
   }));
 
+  // The period was in the schema but had no control, so every budget was silently saved
+  // as monthly and the Budgets page measured all of them over the current month.
+  const periodOptions = (['weekly', 'monthly', 'yearly'] as const).map((p) => ({
+    value: p,
+    label: t(`budgets.periods.${p}`),
+  }));
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {submitError && (
@@ -120,8 +128,21 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
         error={errors.category?.message}
       />
 
+      <Select
+        label={t('budgets.period')}
+        value={selectedPeriod}
+        onChange={(e) =>
+          setValue('period', e.target.value as 'monthly' | 'weekly' | 'yearly', {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+        }
+        options={periodOptions}
+        error={errors.period?.message}
+      />
+
       <Input
-        label={t('budgets.limit')}
+        label={t(`budgets.limitFor.${selectedPeriod}`)}
         type="number"
         step="any"
         placeholder="0.00"

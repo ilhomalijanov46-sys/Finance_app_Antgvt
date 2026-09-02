@@ -10,8 +10,8 @@ import { Button } from '../components/ui/Button';
 import { Tabs } from '../components/ui/Tabs';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { exportToJSON, exportToCSV } from '../utils/exportImport';
-import { profileService } from '../services/profileService';
-import { localDemoStore } from '../services/mockData';
+import { formatDbError } from '../utils/dbErrors';
+import { dataService } from '../services/dataService';
 import { CurrencyCode, LocaleCode, ThemeMode } from '../types';
 import { CategoryManagerModal } from '../components/modals/CategoryManagerModal';
 import {
@@ -29,7 +29,7 @@ import {
 
 export const Profile: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user, signOut, updateUserPreferences } = useAuth();
+  const { user, isDemoMode, signOut, updateUserPreferences } = useAuth();
   const { theme, setTheme } = useTheme();
   const { incomes, expenses, budgets, goals, refetchAll } = useData();
 
@@ -40,6 +40,8 @@ export const Profile: React.FC = () => {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<{ ok: boolean; message: string } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isBusy, setIsBusy] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedMessageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,13 +53,34 @@ export const Profile: React.FC = () => {
     };
   }, []);
 
+  // The header's language switcher changes i18n directly, which used to leave this form
+  // showing the old language while the rest of the app had already switched.
+  useEffect(() => {
+    setLocale(i18n.language as LocaleCode);
+  }, [i18n.language]);
+
+  // The profile arrives asynchronously and can be changed elsewhere; mirror it instead of
+  // freezing whatever was known at first render.
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name || '');
+    setCurrency(user.currency || 'USD');
+  }, [user]);
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateUserPreferences({
-      name,
-      currency,
-      locale,
-    });
+    setSaveError(null);
+
+    // The profile write can be rejected (expired session, RLS). It used to fail silently
+    // while still showing "Saved", so the user believed a change had been stored.
+    try {
+      await updateUserPreferences({ name, currency, locale, theme });
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      setSaveError(formatDbError(err, 'profile.saveFailed'));
+      return;
+    }
+
     i18n.changeLanguage(locale);
     localStorage.setItem('pft_locale', locale);
     setIsSavedMessageVisible(true);
@@ -99,16 +122,22 @@ export const Profile: React.FC = () => {
           return;
         }
 
-        if (Array.isArray(json.incomes)) localDemoStore.setIncomes(json.incomes);
-        if (Array.isArray(json.expenses)) localDemoStore.setExpenses(json.expenses);
-        if (Array.isArray(json.budgets)) localDemoStore.setBudgets(json.budgets);
-        if (Array.isArray(json.goals)) localDemoStore.setGoals(json.goals);
+        setIsBusy(true);
+        setImportStatus({ ok: true, message: t('profile.importRunning') });
 
+        const { imported, total } = await dataService.importBackup(json, user?.id || '');
         await refetchAll();
-        setImportStatus({ ok: true, message: t('profile.importSuccess') });
-      } catch {
-        setImportStatus({ ok: false, message: t('profile.importError') });
+
+        setImportStatus(
+          imported === total
+            ? { ok: true, message: t('profile.importSuccess') }
+            : { ok: false, message: t('profile.importPartial', { ok: imported, total }) }
+        );
+      } catch (err) {
+        console.error('Import failed:', err);
+        setImportStatus({ ok: false, message: formatDbError(err, 'profile.importError') });
       } finally {
+        setIsBusy(false);
         // Reset the input, otherwise picking the same file again fires no change event
         input.value = '';
       }
@@ -117,9 +146,18 @@ export const Profile: React.FC = () => {
   };
 
   const handleResetData = async () => {
-    await profileService.resetDemoData();
-    await refetchAll();
-    setIsResetConfirmOpen(false);
+    setIsBusy(true);
+    try {
+      await dataService.resetAll(user?.id || '');
+      await refetchAll();
+      setImportStatus({ ok: true, message: t('profile.resetSuccess') });
+    } catch (err) {
+      console.error('Reset failed:', err);
+      setImportStatus({ ok: false, message: formatDbError(err, 'profile.resetFailed') });
+    } finally {
+      setIsBusy(false);
+      setIsResetConfirmOpen(false);
+    }
   };
 
   const themeTabs = [
@@ -231,7 +269,13 @@ export const Profile: React.FC = () => {
                 {t('profile.saveSuccess')}
               </span>
             )}
-            {!isSavedMessageVisible && <div />}
+            {!isSavedMessageVisible && saveError && (
+              <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {saveError}
+              </span>
+            )}
+            {!isSavedMessageVisible && !saveError && <div />}
 
             <Button type="submit" variant="primary">
               {t('profile.save')}
@@ -302,6 +346,7 @@ export const Profile: React.FC = () => {
             variant="glass"
             leftIcon={<Upload className="w-3.5 h-3.5" />}
             onClick={handleImportClick}
+            disabled={isBusy}
           >
             {t('profile.importData')}
           </Button>
@@ -310,8 +355,9 @@ export const Profile: React.FC = () => {
             variant="danger"
             leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
             onClick={() => setIsResetConfirmOpen(true)}
+            disabled={isBusy}
           >
-            {t('profile.resetData', { defaultValue: 'Сбросить данные' })}
+            {t('profile.resetData')}
           </Button>
         </div>
 
@@ -360,9 +406,9 @@ export const Profile: React.FC = () => {
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={handleResetData}
-        title={t('profile.resetDataTitle', { defaultValue: 'Сброс данных' })}
-        description={t('profile.resetDesc', { defaultValue: 'Все операции будут сброшены до начальных значений. Это действие необратимо.' })}
-        confirmLabel={t('profile.resetNow', { defaultValue: 'Сбросить' })}
+        title={t('profile.resetDataTitle')}
+        description={isDemoMode ? t('profile.resetDesc') : t('profile.resetDescReal')}
+        confirmLabel={t('profile.resetNow')}
       />
 
       {/* Category Manager Modal */}

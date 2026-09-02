@@ -3,7 +3,10 @@
     "title": "Finance",
     "subtitle": "Shaxsiy moliya boshqaruvi",
     "trackerSubtitle": "Aqlli moliya hisobi",
-    "loading": "Ma'lumotlar yuklanmoqda..."
+    "loading": "Ma'lumotlar yuklanmoqda...",
+    "loadFailed": "Ma'lumotlarni yuklab bo'lmadi",
+    "retry": "Qayta urinish",
+    "loadPaused": "Server bilan aloqa yo'q. Internetni tekshirib, qayta urinib ko'ring"
   },
   "nav": {
     "dashboard": "Umumiy ko'rinish",
@@ -13,7 +16,8 @@
     "goals": "Maqsadlar",
     "calendar": "Taqvim",
     "statistics": "Tahlil",
-    "profile": "Profil"
+    "profile": "Profil",
+    "menu": "Menyu"
   },
   "auth": {
     "title": "Finance",
@@ -38,11 +42,22 @@
       "enterPassword": "Iltimos, parolingizni kiriting",
       "passwordTooShort": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
       "fillAll": "Iltimos, barcha maydonlarni to'ldiring",
-      "signInFailed": "Noto'g'ri email yoki parol",
-      "signUpFailed": "Ro'yxatdan o'tishda xatolik. Boshqa email bilan urinib ko'ring",
+      "signInFailed": "Foydalanuvchi topilmadi yoki parol noto'g'ri",
+      "signUpFailed": "Ro'yxatdan o'tib bo'lmadi. Boshqa email bilan urinib ko'ring",
       "userNotFound": "Bunday emailga ega foydalanuvchi topilmadi",
-      "userAlreadyRegistered": "Ushbu email bilan foydalanuvchi allaqachon mavjud"
-    }
+      "userAlreadyRegistered": "Bu email allaqachon ro'yxatdan o'tgan. Iltimos, tizimga kiring",
+      "enterName": "Iltimos, ismingizni kiriting",
+      "rateLimit": "Juda ko'p urinish. 1–2 daqiqa kutib, qaytadan urinib ko'ring",
+      "emailNotConfirmed": "Email hali tasdiqlanmagan. Pochtangizni tekshiring yoki Supabase sozlamalarida tasdiqlashni o'chiring",
+      "invalidEmail": "Iltimos, to'g'ri email manzilini kiriting",
+      "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
+      "notConfigured": "Ma'lumotlar bazasi sozlanmagan",
+      "generic": "Autentifikatsiyada xatolik yuz berdi"
+    },
+    "demoBadge": "DEMO",
+    "passwordHint": "Kamida 6 ta belgi",
+    "confirmEmailTitle": "Emailni tasdiqlang",
+    "confirmEmailDesc": "{{email}} manziliga xat yubordik. Ro'yxatdan o'tishni yakunlash uchun xatdagi havolaga o'ting, so'ng tizimga kiring."
   },
   "dashboard": {
     "netBalance": "Joriy balans",
@@ -70,9 +85,11 @@
     "viewAll": "Barchasini ko'rish",
     "noTransactions": "Hozircha operatsiyalar yo'q",
     "dataStory": "Aqlli xulosalar",
-    "storyIncrease": "{{category}} toifasidagi xarajatlar o'tgan oyga nisbatan {{percent}}% ga oshdi.",
     "storySavings": "Ushbu oyda daromadingizning {{rate}}% qismini saqlab qoldingiz — ajoyib natija!",
-    "storyBudget": "Barcha rejalashtirilgan byudjet chegaralariga to'liq amal qilyapsiz."
+    "storyBudget": "Barcha rejalashtirilgan byudjet chegaralariga to'liq amal qilyapsiz.",
+    "savedTotal": "Jamg‘arilgan: {{value}}",
+    "goalsTotal": "Jami {{count}} ta maqsad",
+    "storyTopCategory": "{{category}} — eng katta xarajat toifasi: barcha xarajatlarning {{percent}}% ({{value}})."
   },
   "incomes": {
     "title": "Daromadlar",
@@ -166,7 +183,7 @@
   },
   "budgets": {
     "title": "Byudjet rejalashtirish",
-    "subtitle": "Har bir toifa bo'yicha oylik cheklovlarni belgilang",
+    "subtitle": "Toifalar bo‘yicha haftalik, oylik yoki yillik limitlarni belgilang",
     "add": "Byudjet belgilash",
     "edit": "Limitni o'zgartirish",
     "limit": "Oylik limit",
@@ -179,7 +196,24 @@
       "danger": "Limitdan oshdi"
     },
     "empty": "Byudjetlar sozlanmagan",
-    "emptyDesc": "Xarajatlarni nazorat qilish uchun oylik limitlarni o'rnating."
+    "emptyDesc": "Xarajatlarni nazorat qilish uchun toifalarga limit belgilang.",
+    "period": "Byudjet davri",
+    "periods": {
+      "weekly": "Hafta",
+      "monthly": "Oy",
+      "yearly": "Yil"
+    },
+    "periodHint": {
+      "weekly": "shu hafta",
+      "monthly": "shu oy",
+      "yearly": "shu yil"
+    },
+    "limitFor": {
+      "weekly": "Haftalik limit",
+      "monthly": "Oylik limit",
+      "yearly": "Yillik limit"
+    },
+    "totalLimit": "Umumiy limit"
   },
   "goals": {
     "title": "Moliyaviy maqsadlar",
@@ -194,7 +228,6 @@
     "depositAmount": "Qo'shiladigan summa",
     "deadline": "Muddat",
     "daysLeft": "Qolgan kunlar: {{count}}",
-    "daysLeftSingle": "1 kun qoldi",
     "completed": "Maqsadga erishildi!",
     "color": "Rang belgisi",
     "empty": "Hozircha faol maqsadlar yo'q",
@@ -205,7 +238,10 @@
     "defaultTitle": "Jamgarma",
     "alreadyComplete": "Maqsadga allaqachon erishilgan — qo'shadigan narsa yo'q",
     "depositFailed": "Mablag' qo'shib bo'lmadi. Qaytadan urinib ko'ring",
-    "capped": "{{value}} kiritildi — maqsadgacha shuncha qolgan edi"
+    "capped": "{{value}} kiritildi — maqsadgacha shuncha qolgan edi",
+    "overdue": "Muddati o‘tgan",
+    "overdueOn": "Muddati {{date}} da tugagan",
+    "completedCount": "Bajarilgan maqsadlar"
   },
   "calendar": {
     "title": "Moliyaviy taqvim",
@@ -231,7 +267,9 @@
     "nextMonth": "Keyingi oy",
     "nextYear": "Keyingi yil",
     "yearLabel": "{{year}}-yil",
-    "subscription": "Obuna"
+    "subscription": "Obuna",
+    "selectMonth": "Oyni tanlash",
+    "selectYear": "Yilni tanlash"
   },
   "statistics": {
     "title": "Tahlil va Hisobotlar",
@@ -248,8 +286,12 @@
     "insights": "Asosiy xulosalar",
     "savingsCapacity": "Jamg'arma imkoniyati",
     "avgDailySpend": "Kunlik o'rtacha xarajat",
-    "operationsCount": "operatsiyalar",
-    "expensesLabel": "Xarajatlar"
+    "expensesLabel": "Xarajatlar",
+    "chartRange": "Oxirgi 6 oy",
+    "legendIncome": "Daromadlar",
+    "legendExpense": "Xarajatlar",
+    "operations_one": "{{count}} ta operatsiya",
+    "operations_other": "{{count}} ta operatsiya"
   },
   "profile": {
     "title": "Profil va Sozlamalar",
@@ -279,14 +321,23 @@
     "exportJson": "JSON formatida yuklash",
     "exportCsv": "CSV formatida yuklash",
     "importData": "Nusxani tiklash (Import)",
-    "resetDemo": "Demo-ma'lumotlarni qayta tiklash",
     "resetDesc": "Bu amal barcha namunaviy operatsiyalar va byudjetlarni boshlang'ich holatga qaytaradi.",
     "resetNow": "Hozir tiklash",
     "logoutDesc": "Joriy sessiyani tugatish va saqlangan tokenlarni tozalash",
     "save": "Saqlash",
     "saveSuccess": "Sozlamalar muvaffaqiyatli saqlandi",
     "importSuccess": "Ma'lumotlar muvaffaqiyatli tiklandi!",
-    "importError": "Noto'g'ri JSON zaxira fayli"
+    "importError": "Noto'g'ri JSON zaxira fayli",
+    "resetData": "Barcha ma'lumotlarni o'chirish",
+    "resetDataTitle": "Ma'lumotlarni tiklash",
+    "resetDescReal": "Barcha daromadlar, xarajatlar, byudjetlar va maqsadlar ma'lumotlar bazasidan butunlay o'chiriladi. Bu amalni bekor qilib bo'lmaydi.",
+    "resetSuccess": "Ma'lumotlar o'chirildi",
+    "resetFailed": "Ma'lumotlarni o'chirib bo'lmadi. Qaytadan urinib ko'ring",
+    "importConfirmTitle": "Ma'lumotlarni import qilish",
+    "importConfirmDesc": "Fayldagi yozuvlar hisobingizga qo'shiladi. Mavjud yozuvlar o'zgarmaydi.",
+    "importRunning": "Import qilinmoqda…",
+    "importPartial": "{{total}} tadan {{ok}} ta yozuv import qilindi",
+    "saveFailed": "Sozlamalarni saqlab bo'lmadi. Qaytadan urinib ko'ring"
   },
   "validation": {
     "amountPositive": "Miqdor 0 dan katta bo'lishi kerak",
@@ -319,7 +370,11 @@
     "found": "Topildi: {{n}}",
     "resetFilters": "Filtrlarni tozalash",
     "select": "Tanlang...",
-    "total": "Jami: {{value}}"
+    "total": "Jami: {{value}}",
+    "clear": "Tozalash",
+    "vsLastMonth": "o'tgan oyga nisbatan",
+    "noPrevData": "o'tgan oy uchun ma'lumot yo'q",
+    "actionFailed": "Amalni bajarib bo'lmadi"
   },
   "periods": {
     "all": "Barcha sanalar",
@@ -330,10 +385,11 @@
     "last90Days": "Oxirgi 90 kun",
     "thisMonth": "Shu oy",
     "custom": "Boshqa davr",
-    "maxPeriodHint": "Tarixni ko'rish uchun maksimal muddat - 180 kun",
+    "maxPeriodHint": "Maksimal davr — {{days}} kun",
     "selectRange": "Davrni tanlang",
     "apply": "Qo'llash",
-    "close": "Yopish"
+    "close": "Yopish",
+    "rangeTooLong": "{{days}} kundan uzoq davr tanlandi. Qisqaroq oraliq tanlang"
   },
   "categories": {
     "title": "Kategoriyalarni boshqarish",
@@ -364,7 +420,8 @@
     "own": "+ Maxsus kategoriya",
     "ownPlaceholderIncome": "Kategoriya nomi (masalan, 'Kriptovalyuta')",
     "ownPlaceholderExpense": "Kategoriya nomi (masalan, 'Sport')",
-    "add": "Qo'shish"
+    "add": "Qo'shish",
+    "syncFailed": "Kategoriyani saqlab bo'lmadi. Qaytadan urinib ko'ring"
   },
   "datePicker": {
     "placeholder": "kk.oo.yyyy",
@@ -375,5 +432,15 @@
     "nextMonth": "+1 oy",
     "nextYear": "+1 yil",
     "back": "Orqaga"
+  },
+  "dbErrors": {
+    "rls": "Yozish huquqi yo'q. Hisobga qaytadan kiring va urinib ko'ring",
+    "foreignKey": "Foydalanuvchi profili bazada topilmadi. Yaratilishi uchun qaytadan tizimga kiring",
+    "duplicate": "Bunday yozuv allaqachon mavjud",
+    "checkConstraint": "Kiritilgan ma'lumotlar tekshiruvdan o'tmadi. Summa va kategoriyani tekshiring",
+    "jwtExpired": "Sessiya muddati tugadi. Qaytadan tizimga kiring",
+    "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
+    "generic": "Yozuvni saqlab bo'lmadi",
+    "missingSchema": "Ma'lumotlar bazasida kerakli jadval yoki ustun yo'q. supabase/migrations dagi migratsiyalarni Supabase SQL muharririda bajaring. Tafsilotlar: {{details}}"
   }
 }

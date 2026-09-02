@@ -48,7 +48,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       await onConfirm();
     } catch (err) {
       console.error('Confirm action failed:', err);
-      setError(formatDbError(err, 'Не удалось выполнить действие'));
+      setError(formatDbError(err, 'common.actionFailed'));
     } finally {
       setIsConfirming(false);
     }

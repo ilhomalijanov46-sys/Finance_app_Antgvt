@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ThemeToggle } from '../components/layout/ThemeToggle';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
-import { Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Sparkles, ShieldCheck, AlertCircle, MailCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatAuthError } from '../utils/authErrors';
 
@@ -20,36 +20,41 @@ export const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
-      setError('Пожалуйста, введите ваше имя');
+      setError(t('auth.errors.enterName'));
       return;
     }
     if (!email.trim()) {
-      setError('Пожалуйста, введите ваш email');
+      setError(t('auth.errors.enterEmail'));
       return;
     }
     if (!password) {
-      setError('Пожалуйста, введите пароль');
+      setError(t('auth.errors.enterPassword'));
       return;
     }
     if (password.length < 6) {
-      setError('Пароль должен содержать минимум 6 символов');
+      setError(t('auth.errors.passwordTooShort'));
       return;
     }
 
     setError('');
     setSubmitting(true);
     try {
-      await signUp(email.trim(), password, name.trim());
+      const { needsEmailConfirmation } = await signUp(email.trim(), password, name.trim());
+      if (needsEmailConfirmation) {
+        setConfirmationSent(true);
+        return;
+      }
       navigate('/');
     } catch (err: unknown) {
       console.error('Sign up error:', err);
-      setError(formatAuthError(err, 'Не удалось зарегистрироваться. Попробуйте другой email'));
+      setError(formatAuthError(err, 'auth.errors.signUpFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -77,6 +82,26 @@ export const Register: React.FC = () => {
         </div>
 
         <Card variant="glass" padding="lg" className="shadow-apple-lg">
+          {confirmationSent ? (
+            <div className="space-y-4 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mx-auto">
+                <MailCheck className="w-6 h-6 text-emerald-500" />
+              </div>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                {t('auth.confirmEmailTitle')}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                {t('auth.confirmEmailDesc', { email: email.trim() })}
+              </p>
+              <Link
+                to="/login"
+                className="inline-block text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+              >
+                {t('auth.signIn')}
+              </Link>
+            </div>
+          ) : (
+          <>
           <form onSubmit={handleSubmit} className="space-y-4">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
               {t('auth.signUp')}
@@ -124,7 +149,7 @@ export const Register: React.FC = () => {
                   if (error) setError('');
                 }}
                 required
-                helperText="Минимум 6 символов"
+                helperText={t('auth.passwordHint')}
               />
             </div>
 
@@ -149,6 +174,8 @@ export const Register: React.FC = () => {
               </Link>
             </p>
           </div>
+          </>
+          )}
         </Card>
 
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 dark:text-zinc-500">

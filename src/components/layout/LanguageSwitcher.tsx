@@ -85,10 +85,16 @@ export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className }
   const handleSelect = async (code: LocaleCode) => {
     i18n.changeLanguage(code);
     localStorage.setItem('pft_locale', code);
-    if (user) {
-      await updateUserPreferences({ locale: code });
-    }
     setIsOpen(false);
+    if (!user) return;
+    try {
+      await updateUserPreferences({ locale: code });
+    } catch (err) {
+      // The language already applied locally; failing to persist it to the account is
+      // not worth interrupting the user over, but it must not become an unhandled
+      // rejection either.
+      console.error('Failed to persist locale to profile:', err);
+    }
   };
 
   return (

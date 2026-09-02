@@ -9,7 +9,12 @@ import { Dialog } from '../components/ui/Dialog';
 import { IncomeForm } from '../components/forms/IncomeForm';
 import { ExpenseForm } from '../components/forms/ExpenseForm';
 import { GoalForm } from '../components/forms/GoalForm';
-import { getMonthlyTrends, getExpensesByCategory, calculateSummary } from '../utils/analytics';
+import {
+  getMonthlyTrends,
+  getExpensesByCategory,
+  calculateSummary,
+  getMonthOverMonthTrends,
+} from '../utils/analytics';
 import { formatDateTime, formatAxisValue, toDateKey } from '../utils/formatters';
 import {
   TrendingUp,
@@ -81,6 +86,10 @@ export const Dashboard: React.FC = () => {
       color: '#f59e0b',
     };
   };
+
+  // Real month-over-month change. Null when the previous month is empty, in which case
+  // the card shows no badge instead of an invented percentage.
+  const kpiTrends = useMemo(() => getMonthOverMonthTrends(incomes, expenses), [incomes, expenses]);
 
   const verdict = getVerdict();
   const monthlyTrends = getMonthlyTrends(incomes, expenses, 6, i18n.language as LocaleCode);
@@ -174,14 +183,22 @@ export const Dashboard: React.FC = () => {
           value={monthSummary.totalIncome}
           icon={<TrendingUp className="w-4 h-4" />}
           highlightColor="#10b981"
-          trend={{ value: 8.4, isPositive: true }}
+          trend={
+            kpiTrends.income
+              ? { ...kpiTrends.income, label: t('common.vsLastMonth') }
+              : undefined
+          }
         />
         <StatCard
           title={t('dashboard.monthlyExpense')}
           value={monthSummary.totalExpense}
           icon={<TrendingDown className="w-4 h-4" />}
           highlightColor="#f43f5e"
-          trend={{ value: 3.2, isPositive: false }}
+          trend={
+            kpiTrends.expense
+              ? { ...kpiTrends.expense, label: t('common.vsLastMonth') }
+              : undefined
+          }
         />
         <StatCard
           title={t('dashboard.savingsRate')}
@@ -190,7 +207,7 @@ export const Dashboard: React.FC = () => {
           suffix="%"
           icon={<Percent className="w-4 h-4" />}
           highlightColor="#3b82f6"
-          subtitle={`${format(Math.max(0, summary.netBalance))} ${t('goals.currentAmount')}`}
+          subtitle={t('dashboard.savedTotal', { value: format(Math.max(0, summary.netBalance)) })}
         />
         <StatCard
           title={t('dashboard.activeGoals')}
@@ -198,7 +215,7 @@ export const Dashboard: React.FC = () => {
           isCurrency={false}
           icon={<Target className="w-4 h-4" />}
           highlightColor="#8b5cf6"
-          subtitle={`${goals.length} ${t('goals.title')}`}
+          subtitle={t('dashboard.goalsTotal', { count: goals.length })}
         />
       </div>
 
@@ -218,9 +235,15 @@ export const Dashboard: React.FC = () => {
               <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
             </h4>
             <p className="text-xs text-slate-600 dark:text-zinc-300 mt-0.5">
-              {t('dashboard.storyIncrease', {
-                category: t(`expenses.categories.${topExpenseCategory.category}`),
+              {/* The value here is the category's share of total spending. The old copy
+                  announced it as month-over-month growth, so the card stated a number the
+                  app had never calculated. */}
+              {t('dashboard.storyTopCategory', {
+                category: t(`expenses.categories.${topExpenseCategory.category}`, {
+                  defaultValue: topExpenseCategory.category,
+                }),
                 percent: Math.round(topExpenseCategory.percentage),
+                value: format(topExpenseCategory.total),
               })}
             </p>
           </div>
@@ -245,8 +268,8 @@ export const Dashboard: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 {t('incomes.title')}
               </span>
-              <span className="flex items-center gap-1.5 font-medium text-blue-600 dark:text-blue-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="flex items-center gap-1.5 font-medium text-rose-600 dark:text-rose-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                 {t('expenses.title')}
               </span>
             </div>
@@ -261,8 +284,8 @@ export const Dashboard: React.FC = () => {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0071e3" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#0071e3" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -288,7 +311,7 @@ export const Dashboard: React.FC = () => {
                           <p className="text-emerald-600 dark:text-emerald-400 font-semibold">
                             {t('incomes.title')}: {format(Number(payload[0]?.value || 0))}
                           </p>
-                          <p className="text-blue-600 dark:text-blue-400 font-semibold">
+                          <p className="text-rose-600 dark:text-rose-400 font-semibold">
                             {t('expenses.title')}: {format(Number(payload[1]?.value || 0))}
                           </p>
                         </div>
@@ -308,7 +331,7 @@ export const Dashboard: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="expense"
-                  stroke="#0071e3"
+                  stroke="#f43f5e"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#expenseGrad)"
@@ -319,7 +342,7 @@ export const Dashboard: React.FC = () => {
         </Card>
 
         {/* Right 1 Col: Recent Transactions Feed */}
-        <Card variant="glass" padding="md" className="flex flex-col justify-between">
+        <Card variant="glass" padding="md" className="flex flex-col">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800/60">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
               {t('dashboard.recentTransactions')}
@@ -333,7 +356,7 @@ export const Dashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-zinc-800/40 my-2">
+          <div className="divide-y divide-slate-100 dark:divide-zinc-800/40 my-2 flex-1">
             {recentTransactions.length === 0 ? (
               <p className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500">
                 {t('dashboard.noTransactions')}
@@ -373,10 +396,10 @@ export const Dashboard: React.FC = () => {
                       className={`text-xs font-bold shrink-0 ${
                         isInc
                           ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-slate-900 dark:text-zinc-100'
+                          : 'text-rose-600 dark:text-rose-400'
                       }`}
                     >
-                      {isInc ? `+${format(item.amount)}` : `-${format(item.amount)}`}
+                      {isInc ? `+${format(item.amount)}` : `−${format(item.amount)}`}
                     </span>
                   </div>
                 );
@@ -384,7 +407,7 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 mt-auto">
             <Button
               variant="secondary"
               size="sm"

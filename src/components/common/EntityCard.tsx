@@ -195,10 +195,16 @@ export const EntityCard: React.FC<EntityCardProps> = ({
               } ${
                 variant === 'income'
                   ? 'text-emerald-600 dark:text-emerald-400'
+                  : variant === 'expense'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-slate-900 dark:text-zinc-100'
               }`}
             >
-              {variant === 'income' ? `+${format(amount)}` : format(amount)}
+              {variant === 'income'
+                ? `+${format(amount)}`
+                : variant === 'expense'
+                ? `−${format(amount)}`
+                : format(amount)}
             </span>
           </div>
 

@@ -16,8 +16,9 @@ export const budgetService = {
       .eq('user_id', userId);
 
     if (error) {
+      // Rethrow: a failed read must reach the UI as an error, not as "no records".
       console.error('Failed to fetch budgets from Supabase:', error);
-      return [];
+      throw error;
     }
 
     return (data as Budget[]) || [];

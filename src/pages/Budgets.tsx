@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useData } from '../context/DataContext';
 import { useCurrency } from '../hooks/useCurrency';
@@ -11,7 +11,7 @@ import { BudgetForm } from '../components/forms/BudgetForm';
 import { EmptyState } from '../components/common/EmptyState';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { StatCard } from '../components/common/StatCard';
-import { calculateDailySafeSpend } from '../utils/analytics';
+import { getBudgetPeriodRange } from '../utils/analytics';
 import { getCategoryColor } from '../utils/formatters';
 import { Budget } from '../types';
 import {
@@ -34,20 +34,29 @@ export const Budgets: React.FC = () => {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudgetId, setDeletingBudgetId] = useState<string | null>(null);
 
-  // Calculate current month's spent amount for each budget category
-  const now = new Date();
-  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  // Each budget is measured over its own period (week / month / year) rather than always
+  // over the current month, which is what the `period` column was for all along.
+  const budgetStats = useMemo(
+    () =>
+      budgets.map((budget) => {
+        const period = (budget.period || 'monthly') as 'weekly' | 'monthly' | 'yearly';
+        const { start, end, daysLeft } = getBudgetPeriodRange(period);
 
-  const currentMonthExpenses = expenses.filter((e) => e.date.startsWith(currentMonthStr));
+        const spent = expenses
+          .filter((e) => e.category === budget.category && e.date >= start && e.date <= end)
+          .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  const totalBudgetLimit = budgets.reduce((sum, b) => sum + Number(b.limit_amount || 0), 0);
-  const totalBudgetSpent = budgets.reduce((sum, b) => {
-    const spent = currentMonthExpenses
-      .filter((e) => e.category === b.category)
-      .reduce((s, e) => s + Number(e.amount || 0), 0);
-    return sum + spent;
-  }, 0);
+        const limit = Number(budget.limit_amount || 0);
+        const percentUsed = limit > 0 ? (spent / limit) * 100 : 0;
+        const safeDaily = Math.round((Math.max(0, limit - spent) / daysLeft) * 100) / 100;
 
+        return { budget, period, spent, limit, percentUsed, safeDaily };
+      }),
+    [budgets, expenses]
+  );
+
+  const totalBudgetLimit = budgetStats.reduce((sum, s) => sum + s.limit, 0);
+  const totalBudgetSpent = budgetStats.reduce((sum, s) => sum + s.spent, 0);
   const overallPercent = totalBudgetLimit > 0 ? (totalBudgetSpent / totalBudgetLimit) * 100 : 0;
 
   return (
@@ -76,7 +85,7 @@ export const Budgets: React.FC = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
-          title={t('budgets.limit')}
+          title={t('budgets.totalLimit')}
           value={totalBudgetLimit}
           icon={<Layers className="w-4 h-4" />}
           highlightColor="#0071e3"
@@ -106,18 +115,12 @@ export const Budgets: React.FC = () => {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {budgets.map((budget) => {
-            const spent = currentMonthExpenses
-              .filter((e) => e.category === budget.category)
-              .reduce((s, e) => s + Number(e.amount || 0), 0);
-
-            const { safeDaily, percentUsed } = calculateDailySafeSpend(
-              budget.limit_amount,
-              spent
-            );
-
-            const isOverbudget = spent > budget.limit_amount;
+          {budgetStats.map(({ budget, period, spent, limit, percentUsed, safeDaily }) => {
+            const isOverbudget = spent > limit;
             const categoryColor = getCategoryColor(budget.category);
+            // A user-created category has no translation entry, so fall back to its own name
+            // instead of rendering the lookup path.
+            const categoryLabel = t(`expenses.categories.${budget.category}`, { defaultValue: budget.category });
 
             let statusVariant: 'success' | 'warning' | 'danger' = 'success';
             let statusText = t('budgets.status.safe');
@@ -152,22 +155,29 @@ export const Budgets: React.FC = () => {
                           border: `1px solid ${categoryColor}30`,
                         }}
                       >
-                        {budget.category.slice(0, 2).toUpperCase()}
+                        {categoryLabel.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                          {t(`expenses.categories.${budget.category}`)}
+                          {categoryLabel}
                         </h3>
-                        <Badge variant={statusVariant} size="sm" className="mt-1">
-                          {statusText}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <Badge variant={statusVariant} size="sm">
+                            {statusText}
+                          </Badge>
+                          <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">
+                            {t(`budgets.periodHint.${period}`)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => setEditingBudget(budget)}
+                        title={t('common.edit')}
+                        aria-label={t('common.edit')}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -175,6 +185,8 @@ export const Budgets: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setDeletingBudgetId(budget.id)}
+                        title={t('common.delete')}
+                        aria-label={t('common.delete')}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -186,7 +198,7 @@ export const Budgets: React.FC = () => {
                   <div className="my-4 space-y-2">
                     <div className="flex items-baseline justify-between text-xs">
                       <span className="text-slate-500 dark:text-zinc-400">
-                        {format(spent)} / <strong className="text-slate-800 dark:text-zinc-200">{format(budget.limit_amount)}</strong>
+                        {format(spent)} / <strong className="text-slate-800 dark:text-zinc-200">{format(limit)}</strong>
                       </span>
                       <span
                         className={`font-bold ${
@@ -201,12 +213,7 @@ export const Budgets: React.FC = () => {
                       </span>
                     </div>
 
-                    <Progress
-                      value={spent}
-                      max={budget.limit_amount}
-                      variant="dynamic"
-                      size="sm"
-                    />
+                    <Progress value={spent} max={limit} variant="dynamic" size="sm" />
                   </div>
 
                   {/* Daily Safe Spend Footer */}

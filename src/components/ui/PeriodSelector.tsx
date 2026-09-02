@@ -18,6 +18,9 @@ export type PeriodType =
   | 'this_month'
   | 'custom';
 
+/** The range picker advertises this cap in its footer; now it also enforces it. */
+const MAX_RANGE_DAYS = 180;
+
 export interface DateRange {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
@@ -60,12 +63,14 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
   const [tempStartDate, setTempStartDate] = useState<string>(customRange?.startDate || '');
   const [tempEndDate, setTempEndDate] = useState<string>(customRange?.endDate || '');
+  const [rangeError, setRangeError] = useState<string | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync temp dates when modal opens or customRange changes
   useEffect(() => {
     if (isRangeModalOpen) {
+      setRangeError(null);
       if (value === 'custom' && customRange?.startDate && customRange?.endDate) {
         setTempStartDate(customRange.startDate);
         setTempEndDate(customRange.endDate);
@@ -227,20 +232,36 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   }, [viewYear, viewMonth]);
 
   // Click on date in Range Picker
+  const daysBetween = (fromKey: string, toKey: string) => {
+    const [fy, fm, fd] = fromKey.split('-').map(Number);
+    const [ty, tm, td] = toKey.split('-').map(Number);
+    const diff = new Date(ty, tm - 1, td).getTime() - new Date(fy, fm - 1, fd).getTime();
+    return Math.round(diff / (24 * 60 * 60 * 1000)) + 1;
+  };
+
   const handleDateClick = (dateStr: string) => {
+    setRangeError(null);
+
     if (!tempStartDate || (tempStartDate && tempEndDate)) {
       // First click: start new selection
       setTempStartDate(dateStr);
       setTempEndDate('');
-    } else if (tempStartDate && !tempEndDate) {
-      // Second click
-      if (dateStr < tempStartDate) {
-        setTempStartDate(dateStr);
-        setTempEndDate('');
-      } else {
-        setTempEndDate(dateStr);
-      }
+      return;
     }
+
+    // Second click
+    if (dateStr < tempStartDate) {
+      setTempStartDate(dateStr);
+      setTempEndDate('');
+      return;
+    }
+
+    if (daysBetween(tempStartDate, dateStr) > MAX_RANGE_DAYS) {
+      setRangeError(t('periods.rangeTooLong', { days: MAX_RANGE_DAYS }));
+      return;
+    }
+
+    setTempEndDate(dateStr);
   };
 
   const handleApplyCustomRange = () => {
@@ -368,8 +389,8 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                     </button>
 
                     <div className="flex flex-col items-center">
-                      <span className="text-sm font-bold capitalize flex items-center gap-1 text-slate-900 dark:text-zinc-100">
-                        {monthTitle} <span className="text-slate-400 font-normal">›</span>
+                      <span className="text-sm font-bold capitalize text-slate-900 dark:text-zinc-100">
+                        {monthTitle}
                       </span>
                       <span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
                         {viewYear}
@@ -434,6 +455,10 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                             onClick={() => handleDateClick(item.dateStr)}
                             className={cn(
                               'h-8 w-8 rounded-full flex items-center justify-center font-medium transition-all duration-150 relative z-10',
+                              item.dateStr === todayStr &&
+                                !isStart &&
+                                !isEnd &&
+                                'ring-1 ring-blue-500/60',
                               (isStart || isEnd) &&
                                 'bg-blue-600 dark:bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-500/20',
                               isMiddle &&
@@ -454,10 +479,22 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                   </div>
 
                   {/* Bottom Info Banner (Project Blue Glass Style) */}
-                  <div className="p-3 rounded-2xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 flex items-start gap-2.5 text-xs text-slate-700 dark:text-zinc-300">
-                    <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                  <div
+                    className={cn(
+                      'p-3 rounded-2xl border flex items-start gap-2.5 text-xs',
+                      rangeError
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                        : 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20 text-slate-700 dark:text-zinc-300'
+                    )}
+                  >
+                    <Info
+                      className={cn(
+                        'w-4 h-4 shrink-0 mt-0.5',
+                        rangeError ? 'text-amber-500' : 'text-blue-500'
+                      )}
+                    />
                     <span className="leading-snug">
-                      {t('periods.maxPeriodHint')}
+                      {rangeError || t('periods.maxPeriodHint', { days: MAX_RANGE_DAYS })}
                     </span>
                   </div>
 

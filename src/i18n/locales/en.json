@@ -3,7 +3,10 @@
     "title": "Finance",
     "subtitle": "Personal Finance Tracker",
     "trackerSubtitle": "Intelligent Wealth Tracking",
-    "loading": "Loading data..."
+    "loading": "Loading data...",
+    "loadFailed": "Could not load your data",
+    "retry": "Retry",
+    "loadPaused": "No connection to the server. Check your internet and try again"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -13,7 +16,8 @@
     "goals": "Goals",
     "calendar": "Calendar",
     "statistics": "Statistics",
-    "profile": "Profile"
+    "profile": "Profile",
+    "menu": "Menu"
   },
   "auth": {
     "title": "Finance",
@@ -38,11 +42,22 @@
       "enterPassword": "Please enter your password",
       "passwordTooShort": "Password must be at least 6 characters",
       "fillAll": "Please fill in all required fields",
-      "signInFailed": "Invalid email or password",
-      "signUpFailed": "Registration failed. Please try another email",
+      "signInFailed": "User not found, or the password is wrong",
+      "signUpFailed": "Could not sign you up. Try a different email",
       "userNotFound": "User with this email was not found",
-      "userAlreadyRegistered": "User with this email is already registered"
-    }
+      "userAlreadyRegistered": "This email is already registered. Please sign in instead",
+      "enterName": "Please enter your name",
+      "rateLimit": "Too many attempts. Wait 1–2 minutes and try again",
+      "emailNotConfirmed": "Email is not confirmed yet. Check your inbox, or turn confirmation off in the Supabase settings",
+      "invalidEmail": "Please enter a valid email address",
+      "network": "Could not reach the server. Check your internet connection",
+      "notConfigured": "The database is not configured",
+      "generic": "Something went wrong while signing you in"
+    },
+    "demoBadge": "DEMO",
+    "passwordHint": "At least 6 characters",
+    "confirmEmailTitle": "Confirm your email",
+    "confirmEmailDesc": "We sent a message to {{email}}. Follow the link in it to finish signing up, then sign in."
   },
   "dashboard": {
     "netBalance": "Net Balance",
@@ -70,9 +85,11 @@
     "viewAll": "View all",
     "noTransactions": "No transactions recorded yet",
     "dataStory": "Smart Insights",
-    "storyIncrease": "{{category}} expenses grew by {{percent}}% compared to last month.",
     "storySavings": "You saved {{rate}}% of your income this month — well done!",
-    "storyBudget": "You are within 100% of all planned category budgets."
+    "storyBudget": "You are within 100% of all planned category budgets.",
+    "savedTotal": "Saved: {{value}}",
+    "goalsTotal": "{{count}} goals in total",
+    "storyTopCategory": "{{category}} is your largest spending category: {{percent}}% of all expenses ({{value}})."
   },
   "incomes": {
     "title": "Incomes",
@@ -166,7 +183,7 @@
   },
   "budgets": {
     "title": "Budgeting & Limits",
-    "subtitle": "Set monthly spending boundaries per category",
+    "subtitle": "Set weekly, monthly or yearly limits per category",
     "add": "Set Budget Limit",
     "edit": "Modify Limit",
     "limit": "Monthly Limit",
@@ -179,7 +196,24 @@
       "danger": "Overbudget"
     },
     "empty": "No budgets configured",
-    "emptyDesc": "Set category budgets to keep your personal finances strictly on track."
+    "emptyDesc": "Set limits per category to keep your spending on track.",
+    "period": "Budget period",
+    "periods": {
+      "weekly": "Week",
+      "monthly": "Month",
+      "yearly": "Year"
+    },
+    "periodHint": {
+      "weekly": "this week",
+      "monthly": "this month",
+      "yearly": "this year"
+    },
+    "limitFor": {
+      "weekly": "Weekly limit",
+      "monthly": "Monthly limit",
+      "yearly": "Yearly limit"
+    },
+    "totalLimit": "Total limit"
   },
   "goals": {
     "title": "Financial Goals",
@@ -194,7 +228,6 @@
     "depositAmount": "Deposit Amount",
     "deadline": "Target Date",
     "daysLeft": "{{count}} days left",
-    "daysLeftSingle": "1 day left",
     "completed": "Goal Achieved!",
     "color": "Color Badge",
     "empty": "No active goals yet",
@@ -205,7 +238,10 @@
     "defaultTitle": "Savings",
     "alreadyComplete": "This goal is already complete — there is nothing left to add",
     "depositFailed": "Could not add the funds. Please try again",
-    "capped": "Credited {{value}} — that was all the goal had left"
+    "capped": "Credited {{value}} — that was all the goal had left",
+    "overdue": "Overdue",
+    "overdueOn": "Deadline passed {{date}}",
+    "completedCount": "Goals completed"
   },
   "calendar": {
     "title": "Cash Flow Calendar",
@@ -231,7 +267,9 @@
     "nextMonth": "Next month",
     "nextYear": "Next year",
     "yearLabel": "{{year}}",
-    "subscription": "Subscription"
+    "subscription": "Subscription",
+    "selectMonth": "Select month",
+    "selectYear": "Select year"
   },
   "statistics": {
     "title": "Analytics & Reports",
@@ -248,8 +286,12 @@
     "insights": "Executive Highlights",
     "savingsCapacity": "Savings Capacity",
     "avgDailySpend": "Average Daily Outflow",
-    "operationsCount": "operations",
-    "expensesLabel": "Expenses"
+    "expensesLabel": "Expenses",
+    "chartRange": "Last 6 months",
+    "legendIncome": "Income",
+    "legendExpense": "Expenses",
+    "operations_one": "{{count}} operation",
+    "operations_other": "{{count}} operations"
   },
   "profile": {
     "title": "Profile & Preferences",
@@ -279,14 +321,23 @@
     "exportJson": "Export Data (JSON)",
     "exportCsv": "Export Data (CSV)",
     "importData": "Import Backup File",
-    "resetDemo": "Reset Demo Data to Initial Seed",
     "resetDesc": "This will restore all pre-seeded transactions and sample budgets back to initial state.",
     "resetNow": "Reset Now",
     "logoutDesc": "End current session and clear stored tokens",
     "save": "Save Preferences",
     "saveSuccess": "Settings saved successfully",
     "importSuccess": "Data imported successfully!",
-    "importError": "Invalid JSON backup file"
+    "importError": "Invalid JSON backup file",
+    "resetData": "Reset all data",
+    "resetDataTitle": "Reset data",
+    "resetDescReal": "All your incomes, expenses, budgets and goals will be permanently deleted from the database. This cannot be undone.",
+    "resetSuccess": "Data deleted",
+    "resetFailed": "Could not delete the data. Please try again",
+    "importConfirmTitle": "Import data",
+    "importConfirmDesc": "Records from the file will be added to your account. Existing entries stay untouched.",
+    "importRunning": "Importing data…",
+    "importPartial": "Imported {{ok}} of {{total}} records",
+    "saveFailed": "Could not save your preferences. Please try again"
   },
   "validation": {
     "amountPositive": "Amount must be greater than 0",
@@ -319,7 +370,11 @@
     "found": "Found: {{n}}",
     "resetFilters": "Reset filters",
     "select": "Select...",
-    "total": "Total: {{value}}"
+    "total": "Total: {{value}}",
+    "clear": "Clear",
+    "vsLastMonth": "vs last month",
+    "noPrevData": "no data for last month",
+    "actionFailed": "The action could not be completed"
   },
   "periods": {
     "all": "All Dates",
@@ -330,10 +385,11 @@
     "last90Days": "Last 90 days",
     "thisMonth": "This month",
     "custom": "Custom period",
-    "maxPeriodHint": "Maximum selectable history range is 180 days",
+    "maxPeriodHint": "Maximum range — {{days}} days",
     "selectRange": "Select Date Range",
     "apply": "Apply",
-    "close": "Close"
+    "close": "Close",
+    "rangeTooLong": "Range is longer than {{days}} days. Pick a shorter one"
   },
   "categories": {
     "title": "Manage Categories",
@@ -364,7 +420,8 @@
     "own": "+ Custom category",
     "ownPlaceholderIncome": "Category name (e.g. 'Crypto')",
     "ownPlaceholderExpense": "Category name (e.g. 'Sport')",
-    "add": "Add"
+    "add": "Add",
+    "syncFailed": "Could not save the category. Please try again"
   },
   "datePicker": {
     "placeholder": "dd.mm.yyyy",
@@ -375,5 +432,15 @@
     "nextMonth": "+1 month",
     "nextYear": "+1 year",
     "back": "Back"
+  },
+  "dbErrors": {
+    "rls": "You do not have write access. Sign in again and retry",
+    "foreignKey": "Your profile row is missing in the database. Sign in again so it gets created",
+    "duplicate": "This record already exists",
+    "checkConstraint": "The values did not pass validation. Check the amount and the category",
+    "jwtExpired": "Your session has expired. Please sign in again",
+    "network": "Could not reach the server. Check your internet connection",
+    "generic": "Could not save the record",
+    "missingSchema": "The database is missing a required table or column. Apply the migrations from supabase/migrations in the Supabase SQL editor. Details: {{details}}"
   }
 }

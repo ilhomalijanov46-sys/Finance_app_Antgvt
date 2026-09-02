@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useId, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 import { ChevronDown, Check } from 'lucide-react';
@@ -115,7 +115,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       setIsOpen(false);
     };
 
-    const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    // Same reason as Input: a label-derived id collides whenever two selects share a
+    // label, and a Cyrillic label produced a non-ASCII id.
+    const generatedId = useId();
+    const selectId = id || generatedId;
 
     return (
       <div className={cn('w-full space-y-1.5', isOpen ? 'relative z-30' : 'relative z-10')} ref={containerRef}>
@@ -134,6 +137,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             id={selectId}
             ref={triggerRef}
             type="button"
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-haspopup="listbox"
+            aria-invalid={error ? true : undefined}
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(!isOpen)}
             className={cn(

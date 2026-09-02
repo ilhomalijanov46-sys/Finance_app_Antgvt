@@ -102,21 +102,83 @@ export const getMonthlyTrends = (
   return result;
 };
 
-export const calculateDailySafeSpend = (
-  budgetLimit: number,
-  spentSoFar: number
-): { safeDaily: number; daysLeftInMonth: number; percentUsed: number } => {
-  const now = new Date();
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const daysLeft = Math.max(1, lastDay - now.getDate() + 1);
 
-  const remaining = Math.max(0, budgetLimit - spentSoFar);
-  const safeDaily = remaining / daysLeft;
-  const percentUsed = budgetLimit > 0 ? (spentSoFar / budgetLimit) * 100 : 0;
+export interface TrendComparison {
+  /** Signed change against the previous period, in percent. */
+  value: number;
+  /** Whether the change is good news for the user (income up, spending down). */
+  isPositive: boolean;
+}
+
+const sumInMonth = (items: { date: string; amount: number }[], yearMonth: string): number =>
+  items
+    .filter((item) => item.date.startsWith(yearMonth))
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+const yearMonthKey = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+/**
+ * Month-over-month change for the two headline KPI cards. Returns null when the previous
+ * month holds nothing to compare against — a percentage off a zero base is not a number
+ * the user can act on, so the card shows no badge at all rather than a made-up one.
+ */
+export const getMonthOverMonthTrends = (
+  incomes: Income[],
+  expenses: Expense[],
+  now: Date = new Date()
+): { income: TrendComparison | null; expense: TrendComparison | null } => {
+  const currentKey = yearMonthKey(now);
+  const previousKey = yearMonthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  const change = (current: number, previous: number, higherIsBetter: boolean): TrendComparison | null => {
+    if (previous <= 0) return null;
+    const value = Math.round(((current - previous) / previous) * 1000) / 10;
+    return { value, isPositive: higherIsBetter ? value >= 0 : value <= 0 };
+  };
 
   return {
-    safeDaily: Math.round(safeDaily * 100) / 100,
-    daysLeftInMonth: daysLeft,
-    percentUsed,
+    income: change(sumInMonth(incomes, currentKey), sumInMonth(incomes, previousKey), true),
+    expense: change(sumInMonth(expenses, currentKey), sumInMonth(expenses, previousKey), false),
   };
+};
+
+export type BudgetPeriod = 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * Inclusive [start, end] day keys of the period a budget is measured over, anchored on
+ * today. Weeks start on Monday, matching the calendar grids elsewhere in the app.
+ */
+export const getBudgetPeriodRange = (
+  period: BudgetPeriod = 'monthly',
+  now: Date = new Date()
+): { start: string; end: string; daysTotal: number; daysLeft: number } => {
+  const key = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  let startDate: Date;
+  let endDate: Date;
+
+  if (period === 'weekly') {
+    const weekdayFromMonday = (now.getDay() + 6) % 7;
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - weekdayFromMonday);
+    endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 6);
+  } else if (period === 'yearly') {
+    startDate = new Date(now.getFullYear(), 0, 1);
+    endDate = new Date(now.getFullYear(), 11, 31);
+  } else {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysTotal = Math.round((endDate.getTime() - startDate.getTime()) / msPerDay) + 1;
+  const daysLeft = Math.max(
+    1,
+    Math.round(
+      (endDate.getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / msPerDay
+    ) + 1
+  );
+
+  return { start: key(startDate), end: key(endDate), daysTotal, daysLeft };
 };

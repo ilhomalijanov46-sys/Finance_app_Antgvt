@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Tabs } from '../ui/Tabs';
 import { getCategoryColor } from '../../utils/formatters';
+import { formatDbError } from '../../utils/dbErrors';
 import { ExpenseCategory, IncomeCategory } from '../../types';
 import {
   Tag,
@@ -127,12 +128,19 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       return;
     }
 
-    await addCustomCategory({
-      name,
-      type: activeTab,
-      color: selectedColor,
-      icon: 'Tag',
-    });
+    try {
+      await addCustomCategory({
+        name,
+        type: activeTab,
+        color: selectedColor,
+        icon: 'Tag',
+      });
+    } catch (err) {
+      // Categories now round-trip through the database, so a save can fail.
+      console.error('Failed to create category:', err);
+      setNameError(formatDbError(err, 'categories.syncFailed'));
+      return;
+    }
 
     setNewCatName('');
     setNameError(null);
@@ -328,7 +336,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                           <button
                             type="button"
                             onClick={async () => {
-                              await deleteCustomCategory(cat.id);
+                              try {
+                                await deleteCustomCategory(cat.id);
+                              } catch (err) {
+                                console.error('Failed to delete category:', err);
+                                setNameError(formatDbError(err, 'categories.syncFailed'));
+                              }
                               setDeletingCatId(null);
                             }}
                             className="px-2 py-1 text-[11px] font-bold rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-xs"

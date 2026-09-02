@@ -110,7 +110,9 @@ export const formatAxisValue = (amount: number, currency: CurrencyCode = 'USD'):
     case 'RUB':
       return `${formatted} ₽`;
     case 'UZS':
-      return `${formatted} UZS`;
+      // No suffix: "240k UZS" wraps in the axis gutter, and the tooltip already spells
+      // the currency out.
+      return formatted;
     default:
       return `${formatted} ${currency}`;
   }

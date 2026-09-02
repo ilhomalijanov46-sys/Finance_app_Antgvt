@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MotionConfig } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -26,6 +27,15 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 mins
       retry: 1,
+      // With the default 'online' mode a failed read is *paused* rather than failed
+      // whenever React Query believes the browser is offline. The query then sits in
+      // `pending` indefinitely, so the pages render their "nothing here yet" state over
+      // data that never arrived and no error is ever reported. 'always' lets the failure
+      // become a real error the UI can show.
+      networkMode: 'always',
+    },
+    mutations: {
+      networkMode: 'always',
     },
   },
 });
@@ -61,8 +71,9 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
+      <MotionConfig reducedMotion="user">
+      <AuthProvider>
+        <ThemeProvider>
           <DataProvider>
             <BrowserRouter>
               <Suspense fallback={<PageLoader fullscreen />}>
@@ -110,8 +121,9 @@ export const App: React.FC = () => {
               </Suspense>
             </BrowserRouter>
           </DataProvider>
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 };

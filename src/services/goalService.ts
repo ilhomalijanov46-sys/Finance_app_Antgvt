@@ -17,8 +17,9 @@ export const goalService = {
       .order('created_at', { ascending: false });
 
     if (error) {
+      // Rethrow: a failed read must reach the UI as an error, not as "no records".
       console.error('Failed to fetch goals from Supabase:', error);
-      return [];
+      throw error;
     }
 
     return (data as Goal[]) || [];

@@ -11,7 +11,8 @@ import { GoalForm } from '../components/forms/GoalForm';
 import { EmptyState } from '../components/common/EmptyState';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { StatCard } from '../components/common/StatCard';
-import { Goal } from '../types';
+import { Goal, LocaleCode } from '../types';
+import { formatDate } from '../utils/formatters';
 import confetti from 'canvas-confetti';
 import {
   Target,
@@ -26,7 +27,8 @@ import {
 import { motion } from 'framer-motion';
 
 export const Goals: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = (i18n.language as LocaleCode) || 'ru';
   const { goals, depositToGoal, deleteGoal } = useData();
   const { format } = useCurrency();
 
@@ -76,10 +78,16 @@ export const Goals: React.FC = () => {
     depositingGoal && Number(depositingGoal.current_amount) >= Number(depositingGoal.target_amount)
   );
 
+  // Compare whole local days, not timestamps: `new Date('2026-08-28')` is midnight UTC,
+  // which is still "yesterday" for anyone east of Greenwich.
   const getDaysLeft = (deadline?: string) => {
     if (!deadline) return null;
-    const diff = new Date(deadline).getTime() - new Date().getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const [y, m, d] = deadline.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diff = new Date(y, m - 1, d).getTime() - startOfToday.getTime();
+    return Math.round(diff / (1000 * 60 * 60 * 24));
   };
 
   return (
@@ -120,7 +128,7 @@ export const Goals: React.FC = () => {
           highlightColor="#0071e3"
         />
         <StatCard
-          title={t('goals.completed')}
+          title={t('goals.completedCount')}
           value={completedGoalsCount}
           isCurrency={false}
           suffix={` / ${goals.length}`}
@@ -144,6 +152,7 @@ export const Goals: React.FC = () => {
             const percent = Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100));
             const isCompleted = goal.current_amount >= goal.target_amount;
             const daysLeft = getDaysLeft(goal.deadline);
+            const isOverdue = !isCompleted && daysLeft !== null && daysLeft <= 0;
 
             return (
               <motion.div
@@ -175,12 +184,20 @@ export const Goals: React.FC = () => {
                           {goal.title}
                         </h3>
                         {goal.deadline && (
-                          <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border border-slate-200/40 dark:border-zinc-700/40">
+                          <div
+                            className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                              isOverdue
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25'
+                                : 'bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border-slate-200/40 dark:border-zinc-700/40'
+                            }`}
+                          >
                             <Calendar className="w-3 h-3 text-slate-400" />
                             <span>
-                              {daysLeft && daysLeft > 0
+                              {daysLeft !== null && daysLeft > 0
                                 ? t('goals.daysLeft', { count: daysLeft })
-                                : goal.deadline}
+                                : t('goals.overdueOn', {
+                                    date: formatDate(goal.deadline, locale),
+                                  })}
                             </span>
                           </div>
                         )}
@@ -234,7 +251,7 @@ export const Goals: React.FC = () => {
                       <Progress
                         value={goal.current_amount}
                         max={goal.target_amount}
-                        customColor={goal.color}
+                        customColor={isCompleted ? '#10b981' : goal.color}
                         size="md"
                       />
 
@@ -259,10 +276,17 @@ export const Goals: React.FC = () => {
                       size="sm"
                       variant={isCompleted ? 'secondary' : 'primary'}
                       className="w-full text-xs font-medium h-9"
-                      leftIcon={<Plus className="w-3.5 h-3.5" />}
+                      leftIcon={
+                        isCompleted ? (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        ) : (
+                          <Plus className="w-3.5 h-3.5" />
+                        )
+                      }
+                      disabled={isCompleted}
                       onClick={() => setDepositingGoal(goal)}
                     >
-                      {isCompleted ? t('goals.depositMore') : t('goals.deposit')}
+                      {isCompleted ? t('goals.alreadyComplete') : t('goals.deposit')}
                     </Button>
                   </div>
                 </Card>

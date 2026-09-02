@@ -70,26 +70,30 @@ export const StatCard: React.FC<StatCardProps> = ({
         {(subtitle || trend) && (
           <div className="mt-2 flex items-center gap-2 text-xs">
             {trend && (
+              // The arrow follows the direction the number actually moved; the colour
+              // follows whether that movement is good news, which is the opposite for
+              // spending. Reading the sign off `value` keeps a rise in expenses from
+              // being displayed as "-3.2%".
               <span
                 className={cn(
-                  'inline-flex items-center font-semibold rounded-md px-1.5 py-0.5 text-[11px]',
+                  'inline-flex items-center font-semibold rounded-md px-1.5 py-0.5 text-[11px] shrink-0',
                   trend.isPositive
                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                 )}
               >
-                {trend.isPositive ? (
+                {trend.value >= 0 ? (
                   <TrendingUp className="w-3 h-3 mr-0.5" />
                 ) : (
                   <TrendingDown className="w-3 h-3 mr-0.5" />
                 )}
-                {trend.isPositive ? '+' : '-'}
+                {trend.value > 0 ? '+' : ''}
                 {trend.value}%
               </span>
             )}
-            {subtitle && (
+            {(trend?.label || subtitle) && (
               <span className="text-slate-500 dark:text-zinc-400 truncate">
-                {subtitle}
+                {trend?.label || subtitle}
               </span>
             )}
           </div>

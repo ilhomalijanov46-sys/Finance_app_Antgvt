@@ -1,8 +1,12 @@
+import i18n from '../i18n/i18n';
+
 /**
- * Formats Supabase and general authentication errors into friendly, localized messages
+ * Maps a Supabase auth error onto one of the `auth.errors.*` messages, so the text the
+ * user reads follows the interface language instead of being pinned to Russian.
  */
-export function formatAuthError(error: unknown, fallbackMessage = 'Произошла ошибка при аутентификации'): string {
-  if (!error) return fallbackMessage;
+export function formatAuthError(error: unknown, fallbackKey = 'auth.errors.generic'): string {
+  const t = i18n.t.bind(i18n);
+  if (!error) return t(fallbackKey);
 
   const rawMessage = error instanceof Error ? error.message : String(error);
   const lower = rawMessage.toLowerCase();
@@ -12,11 +16,11 @@ export function formatAuthError(error: unknown, fallbackMessage = 'Произо�
     lower.includes('invalid credentials') ||
     lower.includes('wrong password')
   ) {
-    return 'Пользователь не найден или введен неверный пароль';
+    return t('auth.errors.signInFailed');
   }
 
   if (lower.includes('user not found') || lower.includes('no user found')) {
-    return 'Пользователь с таким email не найден';
+    return t('auth.errors.userNotFound');
   }
 
   if (
@@ -24,7 +28,7 @@ export function formatAuthError(error: unknown, fallbackMessage = 'Произо�
     lower.includes('already exists') ||
     lower.includes('email already in use')
   ) {
-    return 'Пользователь с таким email уже зарегистрирован. Пожалуйста, войдите';
+    return t('auth.errors.userAlreadyRegistered');
   }
 
   if (
@@ -32,7 +36,7 @@ export function formatAuthError(error: unknown, fallbackMessage = 'Произо�
     lower.includes('password must be at least 6') ||
     lower.includes('password is too short')
   ) {
-    return 'Пароль должен содержать минимум 6 символов';
+    return t('auth.errors.passwordTooShort');
   }
 
   if (
@@ -40,20 +44,21 @@ export function formatAuthError(error: unknown, fallbackMessage = 'Произо�
     lower.includes('rate limit') ||
     lower.includes('too many requests')
   ) {
-    return 'Слишком много попыток. Пожалуйста, подождите 1–2 минуты и попробуйте снова';
+    return t('auth.errors.rateLimit');
   }
 
   if (lower.includes('email not confirmed') || lower.includes('unconfirmed')) {
-    return 'Email ещё не подтверждён. Проверьте почту или отключите подтверждение в настройках Supabase';
+    return t('auth.errors.emailNotConfirmed');
   }
 
   if (lower.includes('invalid email') || lower.includes('valid email')) {
-    return 'Пожалуйста, введите корректный адрес электронной почты';
+    return t('auth.errors.invalidEmail');
   }
 
-  if (lower.includes('network') || lower.includes('fetch failed')) {
-    return 'Ошибка подключения к серверу. Проверьте интернет-соединение';
+  if (lower.includes('network') || lower.includes('fetch failed') || lower.includes('failed to fetch')) {
+    return t('auth.errors.network');
   }
 
-  return rawMessage;
+  // A message we do not recognise is still more useful to the user than a generic one.
+  return rawMessage || t(fallbackKey);
 }

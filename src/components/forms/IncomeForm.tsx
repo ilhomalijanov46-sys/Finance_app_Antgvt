@@ -87,20 +87,27 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const selectedPaymentMethod = watch('payment_method');
   const selectedDate = watch('date');
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
-    const created = await addCustomCategory({
-      name: newCatName.trim(),
-      type: 'income',
-      color: getCategoryColor(newCatName.trim()),
-    });
-    setValue('category', created.name, { shouldValidate: true, shouldDirty: true });
-    setNewCatName('');
-    setIsAddingCustomCategory(false);
+    try {
+      const created = await addCustomCategory({
+        name: newCatName.trim(),
+        type: 'income',
+        color: getCategoryColor(newCatName.trim()),
+      });
+      setValue('category', created.name, { shouldValidate: true, shouldDirty: true });
+      setNewCatName('');
+      setIsAddingCustomCategory(false);
+    } catch (err) {
+      // Categories are stored server-side now, so creating one can fail. Say so rather
+      // than leaving the input sitting there as if nothing happened.
+      console.error('Failed to create category:', err);
+      setSubmitError(formatDbError(err, 'categories.syncFailed'));
+    }
   };
-
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);

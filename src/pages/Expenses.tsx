@@ -128,8 +128,51 @@ export const Expenses: React.FC = () => {
 
   const totalAmount = filteredExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const avgAmount = filteredExpenses.length > 0 ? totalAmount / filteredExpenses.length : 0;
-  const daysInMonth = 30;
-  const dailyAvg = totalAmount / daysInMonth;
+
+  // "Per day" has to be divided by the days the selected filter actually covers. A fixed
+  // 30 turned the figure into nonsense the moment the user picked "Today" or a custom
+  // range — the card claimed a month's worth of days for a single day of spending.
+  const periodDayCount = useMemo(() => {
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const daysBetween = (fromKey: string, toKey: string) => {
+      const [fy, fm, fd] = fromKey.split('-').map(Number);
+      const [ty, tm, td] = toKey.split('-').map(Number);
+      const diff = new Date(ty, tm - 1, td).getTime() - new Date(fy, fm - 1, fd).getTime();
+      return Math.max(1, Math.round(diff / msPerDay) + 1);
+    };
+
+    switch (period) {
+      case 'today':
+      case 'yesterday':
+        return 1;
+      case '7days':
+        return 7;
+      case '30days':
+        return 30;
+      case '90days':
+        return 90;
+      case 'this_month':
+        return startOfToday.getDate();
+      case 'custom':
+        return customRange?.startDate && customRange?.endDate
+          ? daysBetween(customRange.startDate, customRange.endDate)
+          : 1;
+      default: {
+        // "All dates": span from the oldest record on file to today.
+        if (filteredExpenses.length === 0) return 1;
+        const oldest = filteredExpenses.reduce(
+          (min, item) => (item.date < min ? item.date : min),
+          filteredExpenses[0].date
+        );
+        return daysBetween(oldest, toDateKey(startOfToday));
+      }
+    }
+  }, [period, customRange, filteredExpenses]);
+
+  const dailyAvg = totalAmount / periodDayCount;
 
   const handleExportCSV = () => {
     exportToCSV([], filteredExpenses);

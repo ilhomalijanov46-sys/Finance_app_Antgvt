@@ -23,14 +23,23 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Remove default browser focus outlines to prevent jarring white flash */
-  input, select, textarea, button {
-    outline: none !important;
+  /* The default outline only appears on mouse focus in older engines, which is what the
+     original rule was trying to suppress. Killing it outright also removed the keyboard
+     focus ring from every button, link and field in the app, so tabbing through the
+     interface gave no indication of where you were. Suppress it for pointer focus only,
+     and draw a visible ring for keyboard focus. */
+  input, select, textarea, button, a {
     -webkit-tap-highlight-color: transparent !important;
   }
 
-  input:focus, select:focus, textarea:focus {
-    outline: none !important;
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid #0071e3;
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   /* Hide native number input spin buttons / steppers */
@@ -132,4 +141,17 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(39, 39, 42, 0.8);
+}
+
+/* Users who ask their system for less motion get a still interface: framer-motion is told
+   about the preference in App.tsx, and this covers the CSS-driven animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

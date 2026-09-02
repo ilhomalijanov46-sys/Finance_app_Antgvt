@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { ThemeMode } from '../types';
+import { useAuth } from './AuthContext';
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -16,6 +17,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [isDark, setIsDark] = useState<boolean>(false);
+
+  // The account carries a theme preference, but nothing ever read it back — the choice
+  // only lived in this browser's localStorage. Adopt it once per profile value so the
+  // preference follows the user to another device without overriding a change they make
+  // here afterwards.
+  const { user } = useAuth();
+  const adoptedProfileTheme = useRef<ThemeMode | null>(null);
+
+  useEffect(() => {
+    const profileTheme = user?.theme;
+    if (!profileTheme || adoptedProfileTheme.current === profileTheme) return;
+    adoptedProfileTheme.current = profileTheme;
+    setThemeState(profileTheme);
+    localStorage.setItem('pft_theme', profileTheme);
+  }, [user?.theme]);
 
   useEffect(() => {
     const root = document.documentElement;

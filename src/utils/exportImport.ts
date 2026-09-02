@@ -38,15 +38,19 @@ const csvCell = (value: unknown): string => {
 
 export const exportToCSV = (incomes: Income[], expenses: Expense[]): void => {
   const rows: string[] = [
-    ['Type', 'Date', 'Category', 'Amount', 'PaymentMethodOrSource', 'Note'].map(csvCell).join(','),
+    ['Type', 'Date', 'Time', 'Category', 'Amount', 'PaymentMethod', 'Source', 'Note']
+      .map(csvCell)
+      .join(','),
   ];
 
   for (const inc of incomes) {
     rows.push([
       csvCell('Income'),
       csvCell(inc.date),
+      csvCell(inc.time),
       csvCell(inc.category),
       csvCell(inc.amount),
+      csvCell(inc.payment_method),
       csvCell(inc.source),
       csvCell(inc.note),
     ].join(','));
@@ -56,9 +60,11 @@ export const exportToCSV = (incomes: Income[], expenses: Expense[]): void => {
     rows.push([
       csvCell('Expense'),
       csvCell(exp.date),
+      csvCell(exp.time),
       csvCell(exp.category),
       csvCell(exp.amount),
       csvCell(exp.payment_method),
+      csvCell(''),
       csvCell(exp.note),
     ].join(','));
   }
