@@ -12,7 +12,7 @@ export function formatAuthError(error: unknown, fallbackMessage = 'Произо�
     lower.includes('invalid credentials') ||
     lower.includes('wrong password')
   ) {
-    return 'Неверный адрес электронной почты или пароль';
+    return 'Пользователь не найден или введен неверный пароль';
   }
 
   if (lower.includes('user not found') || lower.includes('no user found')) {
