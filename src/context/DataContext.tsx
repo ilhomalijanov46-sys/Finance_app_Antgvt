@@ -8,6 +8,7 @@ import { goalService } from '../services/goalService';
 import { localDemoStore } from '../services/mockData';
 import { Income, Expense, Budget, Goal, FinancialSummary, CustomCategory } from '../types';
 import { calculateSummary } from '../utils/analytics';
+import i18n from '../i18n/i18n';
 
 interface DataContextType {
   incomes: Income[];
@@ -152,7 +153,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           payment_method: 'card',
           date: dateStr,
           time: timeStr,
-          note: `В цель: ${targetGoal?.title || 'Накопления'}`,
+          note: i18n.t('goals.transferNote', {
+            title: targetGoal?.title || i18n.t('goals.defaultTitle'),
+          }),
         });
       }
 

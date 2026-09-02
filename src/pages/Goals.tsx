@@ -177,7 +177,7 @@ export const Goals: React.FC = () => {
                         type="button"
                         onClick={() => setEditingGoal(goal)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                        title={t('common.edit') || 'Редактировать'}
+                        title={t('common.edit')}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -185,7 +185,7 @@ export const Goals: React.FC = () => {
                         type="button"
                         onClick={() => setDeletingGoalId(goal.id)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                        title={t('common.delete') || 'Удалить'}
+                        title={t('common.delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -196,13 +196,17 @@ export const Goals: React.FC = () => {
                   <div className="my-4 space-y-2.5 pt-3 border-t border-slate-100/80 dark:border-zinc-800/80">
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">Накоплено</span>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">
+                {t('goals.currentAmount')}
+              </span>
                         <p className={`text-base sm:text-lg font-bold tracking-tight ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-zinc-100'}`}>
                           {format(goal.current_amount)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">Целевая сумма</span>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500">
+                {t('goals.targetAmount')}
+              </span>
                         <p className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
                           {format(goal.target_amount)}
                         </p>
@@ -222,11 +226,11 @@ export const Goals: React.FC = () => {
                         <span className="text-slate-700 dark:text-zinc-300">{percent}%</span>
                         {isCompleted ? (
                           <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
-                            🎉 {t('goals.completed') || 'Цель достигнута!'}
+                            🎉 {t('goals.completed')}
                           </span>
                         ) : (
                           <span className="text-slate-400 dark:text-zinc-500 font-normal">
-                            Осталось: {format(Math.max(0, goal.target_amount - goal.current_amount))}
+                            {t('goals.remaining', { value: format(Math.max(0, goal.target_amount - goal.current_amount)) })}
                           </span>
                         )}
                       </div>
@@ -242,7 +246,7 @@ export const Goals: React.FC = () => {
                       leftIcon={<Plus className="w-3.5 h-3.5" />}
                       onClick={() => setDepositingGoal(goal)}
                     >
-                      {isCompleted ? 'Пополнить еще' : t('goals.deposit')}
+                      {isCompleted ? t('goals.depositMore') : t('goals.deposit')}
                     </Button>
                   </div>
                 </Card>

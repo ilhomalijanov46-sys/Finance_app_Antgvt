@@ -32,7 +32,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
       onChange,
       name,
       disabled,
-      placeholder = 'дд.мм.гггг',
+      placeholder,
       id,
     },
     ref
@@ -188,15 +188,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
       return grid;
     }, [year, month, startOffset, daysInMonth, prevMonthDays]);
 
-    const weekDayLabels = (t('calendar.weekDays', { returnObjects: true }) as string[]) || [
-      'Пн',
-      'Вт',
-      'Ср',
-      'Чт',
-      'Пт',
-      'Сб',
-      'Вс',
-    ];
+    const weekDayLabels = t('calendar.weekDays', { returnObjects: true }) as string[];
 
     const todayStr = toDateKey();
     const formattedDisplay = activeValue ? formatDate(activeValue, locale) : '';
@@ -302,7 +294,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                     }
                   }}
                   className="p-1 hover:text-slate-700 dark:hover:text-zinc-200 rounded-md transition-colors cursor-pointer"
-                  title={t('common.clear') || 'Clear'}
+                  title={t('common.clear')}
                 >
                   <X className="w-3.5 h-3.5" />
                 </span>
@@ -340,7 +332,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                   <div className="flex items-center gap-0.5">
                     <button
                       type="button"
-                      title="-1 Год"
+                      title={t('datePicker.prevYear')}
                       onClick={prevYear}
                       className="px-1.5 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                     >
@@ -348,7 +340,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                     </button>
                     <button
                       type="button"
-                      title="-1 Месяц"
+                      title={t('datePicker.prevMonth')}
                       onClick={prevMonth}
                       className="p-1 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                     >
@@ -356,7 +348,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                     </button>
                     <button
                       type="button"
-                      title="+1 Месяц"
+                      title={t('datePicker.nextMonth')}
                       onClick={nextMonth}
                       className="p-1 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                     >
@@ -364,7 +356,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                     </button>
                     <button
                       type="button"
-                      title="+1 Год"
+                      title={t('datePicker.nextYear')}
                       onClick={nextYear}
                       className="px-1.5 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                     >
@@ -377,13 +369,15 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                 {viewMode === 'months' && (
                   <div className="py-2">
                     <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-zinc-800">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Выберите месяц</span>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                        {t('datePicker.selectMonth')}
+                      </span>
                       <button
                         type="button"
                         onClick={() => setViewMode('years')}
                         className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        {year} г. ➔
+                        {t('calendar.yearLabel', { year })} ➔
                       </button>
                     </div>
                     <div className="grid grid-cols-3 gap-1.5">
@@ -409,13 +403,15 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                 {viewMode === 'years' && (
                   <div className="py-2">
                     <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-zinc-800">
-                      <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Выберите год</span>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                        {t('datePicker.selectYear')}
+                      </span>
                       <button
                         type="button"
                         onClick={() => setViewMode('months')}
                         className="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200"
                       >
-                        Назад
+                        {t('datePicker.back')}
                       </button>
                     </div>
                     <div className="grid grid-cols-4 gap-1.5 max-h-52 overflow-y-auto pr-1">
@@ -484,14 +480,14 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
                         onClick={handleToday}
                         className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        {t('calendar.today') || 'Сегодня'}
+                        {t('calendar.today')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsOpen(false)}
                         className="text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
                       >
-                        {t('common.close') || 'Закрыть'}
+                        {t('common.close')}
                       </button>
                     </div>
                   </>

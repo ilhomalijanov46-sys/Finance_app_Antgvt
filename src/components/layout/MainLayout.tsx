@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PageLoader } from '../common/PageLoader';
 
 export const MainLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -47,7 +48,10 @@ export const MainLayout: React.FC = () => {
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth">
           <div className="max-w-7xl mx-auto space-y-6">
-            <Outlet />
+            {/* Route chunks load on demand; the shell stays put while they arrive */}
+            <Suspense fallback={<PageLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

@@ -185,15 +185,7 @@ export const Calendar: React.FC = () => {
     year: 'numeric',
   });
 
-  const weekDayLabels = (t('calendar.weekDays', { returnObjects: true }) as string[]) || [
-    'Пн',
-    'Вт',
-    'Ср',
-    'Чт',
-    'Пт',
-    'Сб',
-    'Вс',
-  ];
+  const weekDayLabels = t('calendar.weekDays', { returnObjects: true }) as string[];
 
   const todayStr = toDateKey();
 
@@ -235,7 +227,7 @@ export const Calendar: React.FC = () => {
           >
             {yearsList.map((y) => (
               <option key={y} value={y} className="dark:bg-zinc-900">
-                {y} г.
+                {t('calendar.yearLabel', { year: y })}
               </option>
             ))}
           </select>
@@ -249,7 +241,7 @@ export const Calendar: React.FC = () => {
           <div className="flex items-center rounded-xl bg-slate-200/60 dark:bg-zinc-800/80 p-0.5 border border-slate-300/30 dark:border-zinc-700/50 shadow-apple-sm">
             <button
               type="button"
-              title="Предыдущий год"
+              title={t('calendar.prevYear')}
               onClick={prevYear}
               className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
@@ -257,7 +249,7 @@ export const Calendar: React.FC = () => {
             </button>
             <button
               type="button"
-              title="Предыдущий месяц"
+              title={t('calendar.prevMonth')}
               onClick={prevPeriod}
               className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
@@ -265,7 +257,7 @@ export const Calendar: React.FC = () => {
             </button>
             <button
               type="button"
-              title="Следующий месяц"
+              title={t('calendar.nextMonth')}
               onClick={nextPeriod}
               className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
@@ -273,7 +265,7 @@ export const Calendar: React.FC = () => {
             </button>
             <button
               type="button"
-              title="Следующий год"
+              title={t('calendar.nextYear')}
               onClick={nextYear}
               className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
@@ -327,7 +319,7 @@ export const Calendar: React.FC = () => {
                   </span>
 
                   {cell.hasSubscription && (
-                    <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" title="Подписка" />
+                    <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" title={t('calendar.subscription')} />
                   )}
                 </div>
 

@@ -209,7 +209,7 @@ export const Statistics: React.FC = () => {
               <span>{t('statistics.categoryBreakdown')}</span>
             </h3>
             <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
-              Всего: {format(filteredData.totalExpense)}
+              {t('common.total', { value: format(filteredData.totalExpense) })}
             </span>
           </div>
 
@@ -223,7 +223,7 @@ export const Statistics: React.FC = () => {
                 {/* Center Summary Text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-2">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                    Расходы
+                    {t('statistics.expensesLabel')}
                   </span>
                   <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-zinc-100 mt-0.5">
                     {format(filteredData.totalExpense)}

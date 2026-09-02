@@ -72,11 +72,11 @@ export const EntityCard: React.FC<EntityCardProps> = ({
     if (!method) return null;
     switch (method) {
       case 'card':
-        return { label: t('expenses.methods.card', { defaultValue: 'Карта' }), icon: <CreditCard className="w-3 h-3" /> };
+        return { label: t('expenses.methods.card'), icon: <CreditCard className="w-3 h-3" /> };
       case 'cash':
-        return { label: t('expenses.methods.cash', { defaultValue: 'Наличные' }), icon: <Banknote className="w-3 h-3" /> };
+        return { label: t('expenses.methods.cash'), icon: <Banknote className="w-3 h-3" /> };
       case 'transfer':
-        return { label: t('expenses.methods.transfer', { defaultValue: 'Перевод' }), icon: <Building2 className="w-3 h-3" /> };
+        return { label: t('expenses.methods.transfer'), icon: <Building2 className="w-3 h-3" /> };
       default:
         return null;
     }
@@ -137,8 +137,8 @@ export const EntityCard: React.FC<EntityCardProps> = ({
               <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 leading-snug break-words">
                 {title === 'transfer'
                   ? variant === 'income'
-                    ? t('incomes.categories.transfer', { defaultValue: 'Перевод' })
-                    : t('expenses.categories.transfer', { defaultValue: 'Перевод в цель' })
+                    ? t('incomes.categories.transfer')
+                    : t('expenses.categories.transfer')
                   : title}
               </h3>
               {subtitle && (
@@ -165,7 +165,7 @@ export const EntityCard: React.FC<EntityCardProps> = ({
                   onEdit();
                 }}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                title={t('common.edit') || 'Редактировать'}
+                title={t('common.edit')}
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -178,7 +178,7 @@ export const EntityCard: React.FC<EntityCardProps> = ({
                   onDelete();
                 }}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                title={t('common.delete') || 'Удалить'}
+                title={t('common.delete')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

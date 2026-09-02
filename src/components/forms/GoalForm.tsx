@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Goal } from '../../types';
 import { useData } from '../../context/DataContext';
@@ -20,15 +21,16 @@ const colorOptions = [
   '#f43f5e', // Rose
 ];
 
-const schema = z.object({
-  title: z.string().min(2, { message: 'Название должно содержать минимум 2 символа' }),
-  target_amount: z.coerce.number().positive({ message: 'Сумма цели должна быть больше 0' }),
-  current_amount: z.coerce.number().min(0, { message: 'Сумма не может быть отрицательной' }),
-  deadline: z.string().optional(),
-  color: z.string().default('#0071e3'),
-});
+const buildSchema = (t: TFunction) =>
+  z.object({
+    title: z.string().min(2, { message: t('validation.titleMin') }),
+    target_amount: z.coerce.number().positive({ message: t('validation.targetPositive') }),
+    current_amount: z.coerce.number().min(0, { message: t('validation.currentNonNegative') }),
+    deadline: z.string().optional(),
+    color: z.string().default('#0071e3'),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 interface GoalFormProps {
   initialData?: Goal;
@@ -42,6 +44,9 @@ export const GoalForm: React.FC<GoalFormProps> = ({
   onCancel,
 }) => {
   const { t } = useTranslation();
+  // Validation messages follow the interface language, so the schema is rebuilt
+  // whenever the language changes.
+  const schema = useMemo(() => buildSchema(t), [t]);
   const { addGoal, updateGoal } = useData();
   const { user } = useAuth();
 

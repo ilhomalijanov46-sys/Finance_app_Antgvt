@@ -117,19 +117,19 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const triggerLabel = useMemo(() => {
     switch (value) {
       case 'all':
-        return t('periods.all', { defaultValue: 'Все даты' });
+        return t('periods.all');
       case 'today':
-        return t('periods.today', { defaultValue: 'Сегодня' });
+        return t('periods.today');
       case 'yesterday':
-        return t('periods.yesterday', { defaultValue: 'Вчера' });
+        return t('periods.yesterday');
       case '7days':
-        return t('periods.last7Days', { defaultValue: 'Последние 7 дней' });
+        return t('periods.last7Days');
       case '30days':
-        return t('periods.last30Days', { defaultValue: 'Последние 30 дней' });
+        return t('periods.last30Days');
       case '90days':
-        return t('periods.last90Days', { defaultValue: 'Последние 90 дней' });
+        return t('periods.last90Days');
       case 'this_month':
-        return t('periods.thisMonth', { defaultValue: 'Этот месяц' });
+        return t('periods.thisMonth');
       case 'custom':
         if (customRange?.startDate && customRange?.endDate) {
           if (customRange.startDate === customRange.endDate) {
@@ -137,9 +137,9 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
           }
           return `${formatShortDate(customRange.startDate)} — ${formatShortDate(customRange.endDate)}`;
         }
-        return t('periods.custom', { defaultValue: 'Свой период' });
+        return t('periods.custom');
       default:
-        return t('periods.all', { defaultValue: 'Все даты' });
+        return t('periods.all');
     }
   }, [value, customRange, t, locale]);
 
@@ -147,16 +147,16 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const options: { key: PeriodType; label: string }[] = useMemo(() => {
     const list: { key: PeriodType; label: string }[] = [];
     if (showAllOption) {
-      list.push({ key: 'all', label: t('periods.all', { defaultValue: 'Все даты' }) });
+      list.push({ key: 'all', label: t('periods.all') });
     }
     list.push(
-      { key: 'today', label: t('periods.today', { defaultValue: 'Сегодня' }) },
-      { key: 'yesterday', label: t('periods.yesterday', { defaultValue: 'Вчера' }) },
-      { key: '7days', label: t('periods.last7Days', { defaultValue: 'Последние 7 дней' }) },
-      { key: '30days', label: t('periods.last30Days', { defaultValue: 'Последние 30 дней' }) },
-      { key: '90days', label: t('periods.last90Days', { defaultValue: 'Последние 90 дней' }) },
-      { key: 'this_month', label: t('periods.thisMonth', { defaultValue: 'Этот месяц' }) },
-      { key: 'custom', label: t('periods.custom', { defaultValue: 'Свой период' }) }
+      { key: 'today', label: t('periods.today') },
+      { key: 'yesterday', label: t('periods.yesterday') },
+      { key: '7days', label: t('periods.last7Days') },
+      { key: '30days', label: t('periods.last30Days') },
+      { key: '90days', label: t('periods.last90Days') },
+      { key: 'this_month', label: t('periods.thisMonth') },
+      { key: 'custom', label: t('periods.custom') }
     );
     return list;
   }, [showAllOption, t]);
@@ -254,7 +254,9 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     setIsRangeModalOpen(false);
   };
 
-  const weekDayHeaders = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+  const weekDayHeaders = (t('calendar.weekDays', { returnObjects: true }) as string[]).map((d) =>
+    d.toLocaleLowerCase()
+  );
 
   return (
     <>
@@ -455,9 +457,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                   <div className="p-3 rounded-2xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 flex items-start gap-2.5 text-xs text-slate-700 dark:text-zinc-300">
                     <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                     <span className="leading-snug">
-                      {t('periods.maxPeriodHint', {
-                        defaultValue: 'Максимально возможный период для отображения истории - 180 дней',
-                      })}
+                      {t('periods.maxPeriodHint')}
                     </span>
                   </div>
 
@@ -468,14 +468,14 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                       onClick={() => setIsRangeModalOpen(false)}
                       className="h-11 rounded-2xl font-semibold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
                     >
-                      {t('periods.close', { defaultValue: 'Закрыть' })}
+                      {t('periods.close')}
                     </button>
                     <button
                       type="button"
                       onClick={handleApplyCustomRange}
                       className="h-11 rounded-2xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/25 active:scale-98 transition-all"
                     >
-                      {t('periods.apply', { defaultValue: 'Применить' })}
+                      {t('periods.apply')}
                     </button>
                   </div>
                 </motion.div>

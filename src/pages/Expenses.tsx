@@ -152,7 +152,7 @@ export const Expenses: React.FC = () => {
   ];
 
   const methodFilterOptions = [
-    { value: 'all', label: t('common.allMethods') || 'Все способы' },
+    { value: 'all', label: t('common.allMethods') },
     ...paymentMethodsList.map((pm) => ({
       value: pm,
       label: t(`expenses.methods.${pm}`),
@@ -179,7 +179,7 @@ export const Expenses: React.FC = () => {
             leftIcon={<Tags className="w-3.5 h-3.5" />}
             onClick={() => setIsCategoryModalOpen(true)}
           >
-            Категории
+            {t('categories.short')}
           </Button>
           <Button
             size="sm"
@@ -228,11 +228,11 @@ export const Expenses: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> {t('common.filter', { defaultValue: 'Фильтры и поиск' })}
+              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> {t('common.filter')}
             </span>
             {filteredExpenses.length !== expenses.length && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                Найдено: {filteredExpenses.length}
+                {t('common.found', { n: filteredExpenses.length })}
               </span>
             )}
           </div>
@@ -253,7 +253,7 @@ export const Expenses: React.FC = () => {
                 }}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 transition-all shadow-apple-sm"
               >
-                <RotateCcw className="w-3 h-3" /> Сбросить фильтры
+                <RotateCcw className="w-3 h-3" /> {t('common.resetFilters')}
               </motion.button>
             )}
           </AnimatePresence>
@@ -263,7 +263,7 @@ export const Expenses: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="lg:col-span-1">
             <Input
-              placeholder={t('common.search') || 'Поиск по названию или заметке...'}
+              placeholder={t('common.search')}
               leftIcon={<Search className="w-4 h-4" />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

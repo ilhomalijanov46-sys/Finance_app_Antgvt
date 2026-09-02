@@ -1,22 +1,24 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { MainLayout } from './components/layout/MainLayout';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { Dashboard } from './pages/Dashboard';
-import { Incomes } from './pages/Incomes';
-import { Expenses } from './pages/Expenses';
-import { Budgets } from './pages/Budgets';
-import { Goals } from './pages/Goals';
-import { Calendar } from './pages/Calendar';
-import { Statistics } from './pages/Statistics';
-import { Profile } from './pages/Profile';
-import { Loader2 } from 'lucide-react';
+import { PageLoader } from './components/common/PageLoader';
+
+// Every route is a separate chunk, so the first paint no longer has to download the
+// charting and form code of pages the user may never open.
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const Incomes = lazy(() => import('./pages/Incomes').then((m) => ({ default: m.Incomes })));
+const Expenses = lazy(() => import('./pages/Expenses').then((m) => ({ default: m.Expenses })));
+const Budgets = lazy(() => import('./pages/Budgets').then((m) => ({ default: m.Budgets })));
+const Goals = lazy(() => import('./pages/Goals').then((m) => ({ default: m.Goals })));
+const Calendar = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.Calendar })));
+const Statistics = lazy(() => import('./pages/Statistics').then((m) => ({ default: m.Statistics })));
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,15 +32,9 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
-  const { t } = useTranslation();
 
   if (isLoading) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-        <p className="text-xs font-medium text-slate-400">{t('app.loading')}</p>
-      </div>
-    );
+    return <PageLoader fullscreen />;
   }
 
   if (!user) {
@@ -52,11 +48,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-      </div>
-    );
+    return <PageLoader fullscreen showLabel={false} />;
   }
 
   if (user) {
@@ -73,7 +65,8 @@ export const App: React.FC = () => {
         <AuthProvider>
           <DataProvider>
             <BrowserRouter>
-              <Routes>
+              <Suspense fallback={<PageLoader fullscreen />}>
+                <Routes>
                 {/* Public Auth Routes */}
                 <Route
                   path="/login"
@@ -113,7 +106,8 @@ export const App: React.FC = () => {
 
                 {/* Catch-all fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </DataProvider>
         </AuthProvider>

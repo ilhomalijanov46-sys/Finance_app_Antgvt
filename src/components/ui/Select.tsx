@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 import { ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,12 +40,14 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       onChange,
       name,
       disabled,
-      placeholder = 'Выберите...',
+      placeholder,
       children,
       id,
     },
     ref
   ) => {
+    const { t } = useTranslation();
+
     // Extract options if passed as children
     const parsedOptions: SelectOption[] = React.useMemo(() => {
       if (options && options.length > 0) return options;
@@ -156,7 +159,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                   {activeOption.icon}
                 </span>
               )}
-              <span className="truncate">{activeOption ? activeOption.label : placeholder}</span>
+              <span className="truncate">
+                {activeOption ? activeOption.label : placeholder ?? t('common.select')}
+              </span>
             </div>
 
             <motion.div

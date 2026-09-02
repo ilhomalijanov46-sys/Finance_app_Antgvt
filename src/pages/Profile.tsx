@@ -251,10 +251,10 @@ export const Profile: React.FC = () => {
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
               <Tags className="w-4 h-4 text-blue-500" />
-              <span>Категории доходов и расходов</span>
+              <span>{t('categories.sectionTitle')}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-              Создавайте свои категории или удаляйте ненужные
+              {t('categories.sectionDesc')}
             </p>
           </div>
           <Button
@@ -263,7 +263,7 @@ export const Profile: React.FC = () => {
             leftIcon={<Tags className="w-3.5 h-3.5" />}
             onClick={() => setIsCategoryModalOpen(true)}
           >
-            Настроить категории
+            {t('categories.manage')}
           </Button>
         </div>
       </Card>
