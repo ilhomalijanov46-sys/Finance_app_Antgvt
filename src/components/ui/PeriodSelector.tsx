@@ -5,7 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { LocaleCode } from '../../types';
-import { lockScroll, unlockScroll, forceUnlockScroll } from '../../utils/scrollLock';
+
 
 export type PeriodType =
   | 'all'
@@ -62,10 +62,9 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sync temp dates and scroll lock when modal opens or customRange changes
+  // Sync temp dates when modal opens or customRange changes
   useEffect(() => {
     if (isRangeModalOpen) {
-      lockScroll();
       if (value === 'custom' && customRange?.startDate && customRange?.endDate) {
         setTempStartDate(customRange.startDate);
         setTempEndDate(customRange.endDate);
@@ -73,9 +72,6 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
         setTempStartDate('');
         setTempEndDate('');
       }
-      return () => {
-        unlockScroll();
-      };
     }
   }, [isRangeModalOpen, value, customRange]);
 
@@ -315,7 +311,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       {/* Range DatePicker Modal via createPortal */}
       {typeof document !== 'undefined' &&
         createPortal(
-          <AnimatePresence onExitComplete={forceUnlockScroll}>
+          <AnimatePresence>
             {isRangeModalOpen && (
               <motion.div
                 key="period-range-overlay-wrapper"
