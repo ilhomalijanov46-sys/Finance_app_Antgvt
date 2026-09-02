@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -24,12 +24,13 @@ export const Dialog: React.FC<DialogProps> = ({
   maxWidth = 'md',
   className,
 }) => {
+  const dialogId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (isOpen) {
-      lockScroll();
+      lockScroll(dialogId);
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           onCloseRef.current();
@@ -37,18 +38,20 @@ export const Dialog: React.FC<DialogProps> = ({
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => {
-        unlockScroll();
+        unlockScroll(dialogId);
         window.removeEventListener('keydown', handleKeyDown);
       };
+    } else {
+      unlockScroll(dialogId);
     }
-  }, [isOpen]);
+  }, [isOpen, dialogId]);
 
   // Safety cleanup on unmount
   useEffect(() => {
     return () => {
-      forceUnlockScroll();
+      forceUnlockScroll(dialogId);
     };
-  }, []);
+  }, [dialogId]);
 
   const maxSizes = {
     sm: 'max-w-sm',
@@ -60,10 +63,10 @@ export const Dialog: React.FC<DialogProps> = ({
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <AnimatePresence onExitComplete={forceUnlockScroll}>
+    <AnimatePresence onExitComplete={() => forceUnlockScroll(dialogId)}>
       {isOpen && (
         <motion.div
-          key="dialog-overlay-wrapper"
+          key={`dialog-overlay-${dialogId}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -116,4 +119,3 @@ export const Dialog: React.FC<DialogProps> = ({
     document.body
   );
 };
-

@@ -1,24 +1,33 @@
-let activeModalCount = 0;
+const openDialogIds = new Set<string>();
 
-export const lockScroll = () => {
+export const lockScroll = (id?: string) => {
   if (typeof document === 'undefined') return;
-  activeModalCount++;
+  if (id) {
+    openDialogIds.add(id);
+  }
   document.body.style.overflow = 'hidden';
 };
 
-export const unlockScroll = () => {
+export const unlockScroll = (id?: string) => {
   if (typeof document === 'undefined') return;
-  activeModalCount = Math.max(0, activeModalCount - 1);
-  if (activeModalCount <= 0) {
-    activeModalCount = 0;
+  if (id) {
+    openDialogIds.delete(id);
+  }
+  if (openDialogIds.size === 0) {
     document.body.style.overflow = '';
     document.body.style.pointerEvents = '';
   }
 };
 
-export const forceUnlockScroll = () => {
+export const forceUnlockScroll = (id?: string) => {
   if (typeof document === 'undefined') return;
-  activeModalCount = 0;
-  document.body.style.overflow = '';
-  document.body.style.pointerEvents = '';
+  if (id) {
+    openDialogIds.delete(id);
+  } else {
+    openDialogIds.clear();
+  }
+  if (openDialogIds.size === 0) {
+    document.body.style.overflow = '';
+    document.body.style.pointerEvents = '';
+  }
 };
