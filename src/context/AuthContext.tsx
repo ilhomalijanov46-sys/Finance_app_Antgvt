@@ -27,44 +27,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         if (isSupabaseConfigured && supabase) {
-          // Check if there is an active local session
-          const { data: { session } } = await supabase.auth.getSession();
+          // Verify with the Supabase server that user is active and exists
+          const { data, error } = await supabase.auth.getUser();
 
-          if (session?.user) {
-            // Verify with the Supabase server that the user is still valid and not deleted in DB
-            const { data: { user: serverUser }, error: userError } = await supabase.auth.getUser();
-
-            if (serverUser && !userError) {
-              const profile = await profileService.getProfile(serverUser.id, serverUser);
-              setUser(profile);
-              setIsDemoMode(false);
-              localDemoStore.setDemoSession(false);
-              if (profile.locale) i18n.changeLanguage(profile.locale);
-              setIsLoading(false);
-              return;
-            } else {
-              // User was deleted from Supabase server or token is invalid
-              console.warn('User deleted from Supabase or invalid session. Clearing local session.');
-              await supabase.auth.signOut().catch(() => {});
-              localDemoStore.setDemoSession(false);
-              setUser(null);
-              setIsDemoMode(false);
-              setIsLoading(false);
-              return;
-            }
+          if (data?.user && !error) {
+            const profile = await profileService.getProfile(data.user.id, data.user);
+            setUser(profile);
+            setIsDemoMode(false);
+            localDemoStore.setDemoSession(false);
+            if (profile.locale) i18n.changeLanguage(profile.locale);
+            setIsLoading(false);
+            return;
+          } else {
+            // User does not exist, was deleted from Supabase, or no session exists
+            await supabase.auth.signOut().catch(() => {});
+            localDemoStore.setDemoSession(false);
+            setUser(null);
+            setIsDemoMode(false);
+            setIsLoading(false);
+            return;
           }
         }
 
-        // Check if demo session was explicitly activated
-        if (localDemoStore.isDemoSession()) {
-          const demoUser = localDemoStore.getUser();
-          setUser(demoUser);
-          setIsDemoMode(true);
-          if (demoUser.locale) i18n.changeLanguage(demoUser.locale);
-        } else {
-          setUser(null);
-          setIsDemoMode(false);
-        }
+        // Supabase not configured fallback
+        setUser(null);
+        setIsDemoMode(false);
       } catch (err) {
         console.error('Auth initialization error:', err);
         setUser(null);
@@ -79,10 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSupabaseConfigured && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_OUT' || !session?.user) {
-          if (!localDemoStore.isDemoSession()) {
-            setUser(null);
-            setIsDemoMode(false);
-          }
+          setUser(null);
+          setIsDemoMode(false);
         } else if (session?.user) {
           const profile = await profileService.getProfile(session.user.id, session.user);
           setUser(profile);
@@ -97,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const signIn = async (email: string, password = 'password123') => {
+  const signIn = async (email: string, password = '') => {
     setIsLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
@@ -119,84 +104,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data.user) {
-          const profile = await profileService.getProfile(data.user.id, data.user);
-          setUser(profile);
-          setIsDemoMode(false);
-          localDemoStore.setDemoSession(false);
-        } else {
-          throw new Error('Неверный адрес электронной почты или пароль');
-        }
-      } else {
-        // Mock fallback login ONLY if Supabase is not configured
-        const mockUser: UserProfile = {
-          id: 'user-' + Date.now(),
-          email: normalizedEmail,
-          name: normalizedEmail.split('@')[0],
-          currency: 'USD',
-          locale: 'ru',
-          theme: 'system',
-        };
-        localDemoStore.setUser(mockUser);
-        localDemoStore.setDemoSession(true);
-        setUser(mockUser);
-        setIsDemoMode(true);
+      if (!isSupabaseConfigured || !supabase) {
+        throw new Error('База данных не настроена');
       }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.user) {
+        throw new Error('Неверный адрес электронной почты или пароль');
+      }
+
+      const profile = await profileService.getProfile(data.user.id, data.user);
+      setUser(profile);
+      setIsDemoMode(false);
+      localDemoStore.setDemoSession(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password = 'password123', name = '') => {
+  const signUp = async (email: string, password = '', name = '') => {
     setIsLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.auth.signUp({
-          email: normalizedEmail,
-          password,
-          options: {
-            data: { name: name || normalizedEmail.split('@')[0] },
-          },
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data.user) {
-          const profile = await profileService.getProfile(data.user.id, data.user);
-          setUser(profile);
-          setIsDemoMode(false);
-          localDemoStore.setDemoSession(false);
-        } else {
-          throw new Error('Не удалось зарегистрировать аккаунт');
-        }
-      } else {
-        const mockUser: UserProfile = {
-          id: 'user-' + Date.now(),
-          email: normalizedEmail,
-          name: name || normalizedEmail.split('@')[0],
-          currency: 'USD',
-          locale: 'ru',
-          theme: 'system',
-        };
-        localDemoStore.setUser(mockUser);
-        localDemoStore.setDemoSession(true);
-        setUser(mockUser);
-        setIsDemoMode(true);
+      if (!isSupabaseConfigured || !supabase) {
+        throw new Error('База данных не настроена');
       }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          data: { name: name || normalizedEmail.split('@')[0] },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.user) {
+        throw new Error('Не удалось зарегистрировать пользователя');
+      }
+
+      const profile = await profileService.getProfile(data.user.id, data.user);
+      setUser(profile);
+      setIsDemoMode(false);
+      localDemoStore.setDemoSession(false);
     } finally {
       setIsLoading(false);
     }
@@ -221,11 +183,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       if (isSupabaseConfigured && supabase) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut().catch(() => {});
       }
       localDemoStore.setDemoSession(false);
       setUser(null);
       setIsDemoMode(false);
+      // Clean up any remaining localStorage auth keys
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('sb-') || key.startsWith('pft_demo') || key === 'pft_is_demo') {
+          localStorage.removeItem(key);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
