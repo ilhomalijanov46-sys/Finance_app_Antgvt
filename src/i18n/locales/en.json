@@ -380,7 +380,6 @@
     "limitPositive": "Limit must be greater than 0",
     "targetPositive": "Goal amount must be greater than 0",
     "amountTooLarge": "Amount is too large",
-    "categoryDuplicate": "This category already exists",
     "currentExceedsTarget": "Current amount cannot exceed the target"
   },
   "common": {
@@ -453,10 +452,6 @@
     "sectionTitle": "Income and expense categories",
     "sectionDesc": "Create your own categories or remove the ones you do not need",
     "short": "Categories",
-    "own": "+ Custom category",
-    "ownPlaceholderIncome": "Category name (e.g. 'Crypto')",
-    "ownPlaceholderExpense": "Category name (e.g. 'Sport')",
-    "add": "Add",
     "syncFailed": "Could not save the category. Please try again",
     "deleteConfirmWithOps": "Delete? ({{n}} → Other)"
   },

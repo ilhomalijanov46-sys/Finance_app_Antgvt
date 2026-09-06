@@ -14,7 +14,7 @@ import { DatePicker } from '../ui/DatePicker';
 import { TimePicker } from '../ui/TimePicker';
 import { Button } from '../ui/Button';
 import { getCategoryColor } from '../../utils/formatters';
-import { Plus, X, Tag, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { formatDbError } from '../../utils/dbErrors';
 
 const defaultExpenseCategories: ExpenseCategory[] = [
@@ -75,11 +75,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   // Validation messages follow the interface language, so the schema is rebuilt
   // whenever the language changes.
   const schema = useMemo(() => buildSchema(t), [t]);
-  const { addExpense, updateExpense, customCategories, addCustomCategory } = useData();
+  const { addExpense, updateExpense, customCategories } = useData();
   const { user } = useAuth();
 
-  const [isAddingCustomCategory, setIsAddingCustomCategory] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
 
   const now = new Date();
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -108,42 +106,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const selectedTime = watch('time');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
-  const handleCreateCategory = async () => {
-    const name = newCatName.trim();
-    if (!name || isCreatingCategory) return; // guards both the empty case and a double-click/double-Enter
-
-    // Case-insensitive: the database's own uniqueness check is case-sensitive, so
-    // "Такси" and "такси" would otherwise both get created and be indistinguishable
-    // everywhere they're displayed.
-    const isDuplicate = categoryOptions.some(
-      (opt) => opt.label.toLowerCase() === name.toLowerCase()
-    );
-    if (isDuplicate) {
-      setSubmitError(t('validation.categoryDuplicate'));
-      return;
-    }
-
-    setIsCreatingCategory(true);
-    try {
-      const created = await addCustomCategory({
-        name,
-        type: 'expense',
-        color: getCategoryColor(name),
-      });
-      setValue('category', created.name, { shouldValidate: true, shouldDirty: true });
-      setNewCatName('');
-      setIsAddingCustomCategory(false);
-    } catch (err) {
-      // Categories are stored server-side now, so creating one can fail. Say so rather
-      // than leaving the input sitting there as if nothing happened.
-      console.error('Failed to create category:', err);
-      setSubmitError(formatDbError(err, 'categories.syncFailed'));
-    } finally {
-      setIsCreatingCategory(false);
-    }
-  };
 
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
@@ -223,78 +186,22 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         })}
       />
 
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 ml-0.5">
-            {t('expenses.category')}
-          </label>
-          <button
-            type="button"
-            onClick={() => setIsAddingCustomCategory(!isAddingCustomCategory)}
-            className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-          >
-            {isAddingCustomCategory ? (
-              <>
-                <X className="w-3 h-3" /> {t('common.cancel')}
-              </>
-            ) : (
-              <>
-                <Plus className="w-3 h-3" /> {t('categories.own')}
-              </>
-            )}
-          </button>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Select
+          label={t('expenses.category')}
+          value={selectedCategory}
+          onChange={(e) => setValue('category', e.target.value, { shouldValidate: true, shouldDirty: true })}
+          options={categoryOptions}
+          error={errors.category?.message}
+        />
 
-        {isAddingCustomCategory && (
-          <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 border border-blue-500/30 flex items-center gap-2 mb-2 animate-fade-in">
-            <Tag className="w-4 h-4 text-blue-500 shrink-0" />
-            <input
-              type="text"
-              value={newCatName}
-              onChange={(e) => setNewCatName(e.target.value)}
-              onKeyDown={(e) => {
-                // Enter here used to submit the whole expense form instead of creating
-                // the category, since this input sits inside that <form> too.
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleCreateCategory();
-                }
-              }}
-              placeholder={t('categories.ownPlaceholderExpense')}
-              aria-label={t('categories.ownPlaceholderExpense')}
-              className="flex-1 bg-transparent text-xs text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400"
-              autoFocus
-              disabled={isCreatingCategory}
-            />
-            <Button
-              size="sm"
-              variant="primary"
-              type="button"
-              onClick={handleCreateCategory}
-              isLoading={isCreatingCategory}
-              className="text-xs h-7 px-2.5"
-            >
-              {t('categories.add')}
-            </Button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Select
-            value={selectedCategory}
-            onChange={(e) => setValue('category', e.target.value, { shouldValidate: true, shouldDirty: true })}
-            options={categoryOptions}
-            error={errors.category?.message}
-          />
-
-          <Select
-            ariaLabel={t('expenses.paymentMethod')}
-            value={selectedPaymentMethod}
-            onChange={(e) => setValue('payment_method', e.target.value as PaymentMethod, { shouldValidate: true, shouldDirty: true })}
-            options={paymentOptions}
-            error={errors.payment_method?.message}
-          />
-        </div>
+        <Select
+          label={t('expenses.paymentMethod')}
+          value={selectedPaymentMethod}
+          onChange={(e) => setValue('payment_method', e.target.value as PaymentMethod, { shouldValidate: true, shouldDirty: true })}
+          options={paymentOptions}
+          error={errors.payment_method?.message}
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

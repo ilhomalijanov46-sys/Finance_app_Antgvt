@@ -380,7 +380,6 @@
     "limitPositive": "Limit 0 dan katta bo'lishi kerak",
     "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak",
     "amountTooLarge": "Summa juda katta",
-    "categoryDuplicate": "Bunday toifa allaqachon mavjud",
     "currentExceedsTarget": "Joriy summa maqsaddan oshib ketmasligi kerak"
   },
   "common": {
@@ -453,10 +452,6 @@
     "sectionTitle": "Daromad va xarajat kategoriyalari",
     "sectionDesc": "O'z kategoriyalaringizni yarating yoki keraksizlarini o'chiring",
     "short": "Kategoriyalar",
-    "own": "+ Maxsus kategoriya",
-    "ownPlaceholderIncome": "Kategoriya nomi (masalan, 'Kriptovalyuta')",
-    "ownPlaceholderExpense": "Kategoriya nomi (masalan, 'Sport')",
-    "add": "Qo'shish",
     "syncFailed": "Kategoriyani saqlab bo'lmadi. Qaytadan urinib ko'ring",
     "deleteConfirmWithOps": "O'chirilsinmi? ({{n}} → Boshqa)"
   },

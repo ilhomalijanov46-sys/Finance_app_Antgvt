@@ -19,16 +19,28 @@ export interface TimePickerProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTE_STEPS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 
 const isValidTime = (value: string) => /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// Five-minute steps cover what anyone actually picks from a list; an existing odd value
+// (an edited record, "Now", a typed time) is spliced in so it stays selectable.
+const minuteOptions = (current: string) =>
+  current && !MINUTE_STEPS.includes(current)
+    ? [...MINUTE_STEPS, current].sort((a, b) => Number(a) - Number(b))
+    : MINUTE_STEPS;
+
+type Segment = 'hour' | 'minute';
 
 /**
  * Replaces <input type="time">, whose dropdown is browser chrome: it can't be styled,
  * it doesn't match the DatePicker sitting next to it in every form, and its icon is the
- * browser's own rather than the app's. Deliberately mirrors DatePicker — same trigger
- * button, same popover card, same clear button, same footer — so the two fields read as
- * one pair.
+ * browser's own rather than the app's.
+ *
+ * Deliberately small: two short scroll columns, no readout, no steppers, and a card that
+ * is exactly as wide as the field so it can never spill out of the dialog. Everything
+ * beyond the two columns (arrow keys, typing digits) is invisible until used.
  */
 export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
   (
@@ -53,6 +65,7 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
     const [internalValue, setInternalValue] = useState<string>(controlledValue || defaultValue || '');
     const [isOpen, setIsOpen] = useState(false);
     const [openUpward, setOpenUpward] = useState(false);
+    const [segment, setSegment] = useState<Segment>('hour');
 
     const activeValue = isControlled ? controlledValue || '' : internalValue;
     const [hourPart, minutePart] = isValidTime(activeValue) ? activeValue.split(':') : ['', ''];
@@ -61,6 +74,9 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
     const triggerRef = useRef<HTMLButtonElement>(null);
     const hourColRef = useRef<HTMLDivElement>(null);
     const minuteColRef = useRef<HTMLDivElement>(null);
+    // Digits typed so far into the segment being edited, so "1" then "4" reads as 14.
+    const typeBufferRef = useRef<string>('');
+    const closeTimerRef = useRef<number>();
 
     useImperativeHandle(ref, () => triggerRef.current!);
 
@@ -70,7 +86,14 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
       if (isOpen && triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
-        setOpenUpward(spaceBelow < 300 && rect.top > 300);
+        setOpenUpward(spaceBelow < 260 && rect.top > 260);
+      }
+    }, [isOpen]);
+
+    useEffect(() => {
+      if (isOpen) {
+        setSegment('hour');
+        typeBufferRef.current = '';
       }
     }, [isOpen]);
 
@@ -85,7 +108,9 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
         }
       }, 0);
       return () => window.clearTimeout(scrollTimer);
-    }, [isOpen, activeValue]);
+    }, [isOpen]);
+
+    useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
 
     // Handle click outside
     useEffect(() => {
@@ -98,35 +123,104 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen]);
 
-    // Escape closes the popover — and *only* the popover. The Dialog these fields live
-    // in also listens for Escape on window, so without stopping the event here one
-    // press would dismiss the whole form along with the popover, losing everything
-    // typed into it. Registered in the capture phase so it runs before Dialog's
-    // bubble-phase listener gets the chance.
-    useEffect(() => {
-      if (!isOpen) return;
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          e.stopPropagation();
-          setIsOpen(false);
-          triggerRef.current?.focus();
-        }
-      };
-      window.addEventListener('keydown', handleKeyDown, true);
-      return () => window.removeEventListener('keydown', handleKeyDown, true);
-    }, [isOpen]);
-
     const emit = (next: string) => {
       if (!isControlled) setInternalValue(next);
       onChange?.({ target: { value: next, name } });
     };
 
-    const selectHour = (h: string) => emit(`${h}:${minutePart || '00'}`);
-    const selectMinute = (m: string) => emit(`${hourPart || '00'}:${m}`);
+    const setHour = (h: number) => emit(`${pad((h + 24) % 24)}:${minutePart || '00'}`);
+    const setMinute = (m: number) => emit(`${hourPart || '00'}:${pad((m + 60) % 60)}`);
+
+    const selectHour = (h: string) => {
+      setHour(Number(h));
+      setSegment('minute');
+      typeBufferRef.current = '';
+    };
+
+    // Picking a minute is the last thing anyone does here, so close on it — the value is
+    // complete and keeping the card open just adds a click.
+    const selectMinute = (m: string) => {
+      setMinute(Number(m));
+      typeBufferRef.current = '';
+      closeTimerRef.current = window.setTimeout(() => setIsOpen(false), 120);
+    };
+
+    const step = (delta: number) => {
+      if (segment === 'hour') setHour((Number(hourPart) || 0) + delta);
+      else setMinute((Number(minutePart) || 0) + delta);
+      typeBufferRef.current = '';
+    };
+
+    // Typing "0930" fills the field the way the native control does: two digits per
+    // segment, with an early jump when the first digit can't start a two-digit value.
+    const typeDigit = (digit: string) => {
+      const buffer = typeBufferRef.current + digit;
+      if (segment === 'hour') {
+        if (buffer.length === 1) {
+          setHour(Number(buffer));
+          if (Number(buffer) > 2) {
+            typeBufferRef.current = '';
+            setSegment('minute');
+          } else {
+            typeBufferRef.current = buffer;
+          }
+          return;
+        }
+        const hour = Number(buffer);
+        setHour(hour <= 23 ? hour : Number(digit));
+        typeBufferRef.current = '';
+        setSegment('minute');
+        return;
+      }
+      if (buffer.length === 1) {
+        setMinute(Number(buffer));
+        typeBufferRef.current = Number(buffer) > 5 ? '' : buffer;
+        return;
+      }
+      setMinute(Number(buffer) % 60);
+      typeBufferRef.current = '';
+    };
+
+    // Escape closes the popover — and *only* the popover. The Dialog these fields live
+    // in also listens for Escape on window, so without stopping the event here one
+    // press would dismiss the whole form along with the popover, losing everything
+    // typed into it. Registered in the capture phase so it runs before Dialog's
+    // bubble-phase listener gets the chance. The same listener carries the keyboard
+    // editing, since focus stays on the trigger button while the card is open.
+    useEffect(() => {
+      if (!isOpen) return;
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(false);
+          triggerRef.current?.focus();
+          return;
+        }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          step(e.key === 'ArrowUp' ? 1 : -1);
+          return;
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          setSegment(e.key === 'ArrowLeft' ? 'hour' : 'minute');
+          typeBufferRef.current = '';
+          return;
+        }
+        if (/^\d$/.test(e.key)) {
+          e.preventDefault();
+          typeDigit(e.key);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown, true);
+      return () => window.removeEventListener('keydown', handleKeyDown, true);
+    });
 
     const handleNow = () => {
       const now = new Date();
-      emit(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      emit(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+      closeTimerRef.current = window.setTimeout(() => setIsOpen(false), 120);
     };
 
     const handleClear = () => emit('');
@@ -140,17 +234,19 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
       selected: string,
       onPick: (v: string) => void,
       colRef: React.RefObject<HTMLDivElement>,
-      columnLabel: string
+      columnLabel: string,
+      which: Segment
     ) => (
       <div className="flex-1 min-w-0">
-        <div className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500 text-center pb-1.5">
+        <div className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 text-center pb-1">
           {columnLabel}
         </div>
         <div
           ref={colRef}
           role="listbox"
           aria-label={columnLabel}
-          className="h-44 overflow-y-auto custom-scrollbar space-y-0.5 pr-1"
+          onMouseDown={() => setSegment(which)}
+          className="h-[152px] overflow-y-auto custom-scrollbar snap-y snap-mandatory space-y-0.5 pr-0.5"
         >
           {values.map((v) => {
             const isSelected = v === selected;
@@ -163,10 +259,10 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
                 data-selected={isSelected}
                 onClick={() => onPick(v)}
                 className={cn(
-                  'h-8 w-full rounded-lg flex items-center justify-center text-xs font-medium transition-all duration-150',
+                  'h-8 w-full rounded-lg flex items-center justify-center text-xs font-medium tabular-nums snap-start transition-colors duration-150',
                   isSelected
-                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30'
-                    : 'text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800/80'
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                 )}
               >
                 {v}
@@ -210,7 +306,7 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
               className
             )}
           >
-            <span className={cn('truncate font-medium', !activeValue && 'text-slate-400 dark:text-zinc-500 font-normal')}>
+            <span className={cn('truncate font-medium tabular-nums', !activeValue && 'text-slate-400 dark:text-zinc-500 font-normal')}>
               {activeValue || placeholder || t('timePicker.placeholder')}
             </span>
             <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
@@ -235,32 +331,25 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
                 animate={{ opacity: 1, y: openUpward ? -4 : 4, scale: 1 }}
                 exit={{ opacity: 0, y: openUpward ? 6 : -6, scale: 0.98 }}
                 transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                // left-0 right-0: the card is exactly the width of the field, so it can
+                // never hang outside the dialog the way a fixed width did.
                 className={cn(
-                  'absolute left-0 z-[100] w-48 rounded-2xl p-3.5 backdrop-blur-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl',
+                  'absolute left-0 right-0 z-[100] min-w-[150px] rounded-2xl p-2 backdrop-blur-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl',
                   openUpward ? 'bottom-full mb-2' : 'top-full mt-1'
                 )}
               >
-                <div className="flex gap-2">
-                  {column(HOURS, hourPart, selectHour, hourColRef, t('timePicker.hours'))}
-                  {column(MINUTES, minutePart, selectMinute, minuteColRef, t('timePicker.minutes'))}
+                <div className="flex gap-1.5">
+                  {column(HOURS, hourPart, selectHour, hourColRef, t('timePicker.hours'), 'hour')}
+                  {column(minuteOptions(minutePart), minutePart, selectMinute, minuteColRef, t('timePicker.minutes'), 'minute')}
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={handleNow}
-                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {t('timePicker.now')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    className="text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
-                  >
-                    {t('common.close')}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleNow}
+                  className="mt-1.5 w-full py-1.5 rounded-lg text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                >
+                  {t('timePicker.now')}
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

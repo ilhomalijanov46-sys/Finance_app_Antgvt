@@ -352,7 +352,10 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
           type="button"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className={cn(
-            'flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 outline-none',
+            // w-full so the trigger fills its column when a parent stretches this
+            // control (the filter grid does); inside an inline-block container that
+            // still shrinks to the label, so the standalone usages are unaffected.
+            'w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 outline-none',
             'bg-slate-100/80 dark:bg-zinc-800/80 hover:bg-slate-200/70 dark:hover:bg-zinc-700/80',
             'border border-slate-200/90 dark:border-zinc-700/70 text-slate-900 dark:text-zinc-100 shadow-apple-sm',
             isDropdownOpen && 'border-blue-500 ring-2 ring-blue-500/20 bg-white dark:bg-zinc-900'
