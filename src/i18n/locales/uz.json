@@ -457,7 +457,8 @@
     "ownPlaceholderIncome": "Kategoriya nomi (masalan, 'Kriptovalyuta')",
     "ownPlaceholderExpense": "Kategoriya nomi (masalan, 'Sport')",
     "add": "Qo'shish",
-    "syncFailed": "Kategoriyani saqlab bo'lmadi. Qaytadan urinib ko'ring"
+    "syncFailed": "Kategoriyani saqlab bo'lmadi. Qaytadan urinib ko'ring",
+    "deleteConfirmWithOps": "O'chirilsinmi? ({{n}} → Boshqa)"
   },
   "datePicker": {
     "placeholder": "kk.oo.yyyy",

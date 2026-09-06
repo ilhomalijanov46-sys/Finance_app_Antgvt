@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSummary, getPeriodRange, filterByPeriod, countDaysInRange } from './analytics';
+import { calculateSummary, getPeriodRange, filterByPeriod, countDaysInRange, getMonthlyTrendsForRange } from './analytics';
 import { Income, Expense } from '../types';
 
 // Fixed reference point so these tests don't depend on the day they happen to run.
@@ -82,5 +82,33 @@ describe('calculateSummary', () => {
     const summary = calculateSummary([], [expense(200)]);
     expect(summary.savingsRate).toBe(0);
     expect(summary.netBalance).toBe(-200);
+  });
+});
+
+describe('getMonthlyTrendsForRange', () => {
+  const incs: Income[] = [
+    { id: 'i1', user_id: 'u', amount: 100, category: 'salary', date: '2026-07-10' },
+    { id: 'i2', user_id: 'u', amount: 200, category: 'salary', date: '2026-08-10' },
+    { id: 'i3', user_id: 'u', amount: 300, category: 'salary', date: '2026-09-10' },
+  ];
+  const exps: Expense[] = [
+    { id: 'e1', user_id: 'u', amount: 50, category: 'rent', payment_method: 'card', date: '2026-09-05' },
+  ];
+
+  it('follows the selected period range instead of always trailing 6 months (regression: L5)', () => {
+    // "this_month"-shaped range: just September.
+    const result = getMonthlyTrendsForRange(incs, exps, { start: '2026-09-01', end: '2026-09-15' }, 'en');
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ income: 300, expense: 50 });
+  });
+
+  it('spans multiple months when the range crosses a month boundary', () => {
+    const result = getMonthlyTrendsForRange(incs, exps, { start: '2026-07-01', end: '2026-09-15' }, 'en');
+    expect(result.map((r) => r.income)).toEqual([100, 200, 300]);
+  });
+
+  it('falls back to trailing 6 months for "all" (range: null), same as before', () => {
+    const result = getMonthlyTrendsForRange(incs, exps, null, 'en');
+    expect(result).toHaveLength(6);
   });
 });

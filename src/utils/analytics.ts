@@ -71,6 +71,35 @@ export const getIncomesByCategory = (incomes: Income[]): CategorySummary[] => {
     .sort((a, b) => b.total - a.total);
 };
 
+const buildMonthBucket = (
+  d: Date,
+  incomes: Income[],
+  expenses: Expense[],
+  locale: LocaleCode
+): MonthlyTrend => {
+  const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  // Chart axis labels follow the interface language instead of always being English
+  const label = getMonthName(d, locale, 'short');
+
+  const monthIncomes = incomes
+    .filter((inc) => inc.date.startsWith(yearMonth))
+    .reduce((sum, inc) => sum + Number(inc.amount || 0), 0);
+
+  const monthExpenses = expenses
+    .filter((exp) => exp.date.startsWith(yearMonth))
+    .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
+  return {
+    month: label,
+    income: monthIncomes,
+    expense: monthExpenses,
+    // Not clamped to 0: a month that overspent should be able to show it as negative
+    // savings wherever this field ends up rendered, consistent with calculateSummary's
+    // savingsRate.
+    savings: monthIncomes - monthExpenses,
+  };
+};
+
 export const getMonthlyTrends = (
   incomes: Income[],
   expenses: Expense[],
@@ -81,30 +110,41 @@ export const getMonthlyTrends = (
   const now = new Date();
 
   for (let i = monthsCount - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    // Chart axis labels follow the interface language instead of always being English
-    const label = getMonthName(d, locale, 'short');
-
-    const monthIncomes = incomes
-      .filter((inc) => inc.date.startsWith(yearMonth))
-      .reduce((sum, inc) => sum + Number(inc.amount || 0), 0);
-
-    const monthExpenses = expenses
-      .filter((exp) => exp.date.startsWith(yearMonth))
-      .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-
-    result.push({
-      month: label,
-      income: monthIncomes,
-      expense: monthExpenses,
-      // Not clamped to 0: a month that overspent should be able to show it as negative
-      // savings wherever this field ends up rendered, consistent with calculateSummary's
-      // savingsRate.
-      savings: monthIncomes - monthExpenses,
-    });
+    result.push(buildMonthBucket(new Date(now.getFullYear(), now.getMonth() - i, 1), incomes, expenses, locale));
   }
 
+  return result;
+};
+
+/**
+ * Same shape as getMonthlyTrends, but the month range follows a transaction-list period
+ * filter (see getPeriodRange) instead of always trailing 6 months from today —
+ * Statistics' "income vs expense" chart used to show a fixed 6-month window no matter
+ * what period was selected above it, silently disagreeing with the KPI cards on the
+ * same page. `range: null` ("all") has no month range to anchor to, so it falls back to
+ * the previous trailing-6-months default.
+ */
+export const getMonthlyTrendsForRange = (
+  incomes: Income[],
+  expenses: Expense[],
+  range: { start: string; end: string } | null,
+  locale: LocaleCode = 'ru'
+): MonthlyTrend[] => {
+  if (!range) return getMonthlyTrends(incomes, expenses, 6, locale);
+
+  const [sy, sm] = range.start.split('-').map(Number);
+  const [ey, em] = range.end.split('-').map(Number);
+  const result: MonthlyTrend[] = [];
+  let cursor = new Date(sy, sm - 1, 1);
+  const last = new Date(ey, em - 1, 1);
+  // A custom range is capped at 180 days (PeriodSelector's own MAX_RANGE_DAYS), so this
+  // is a generous safety net, not something normal usage should ever hit.
+  let guard = 0;
+  while (cursor <= last && guard < 24) {
+    result.push(buildMonthBucket(cursor, incomes, expenses, locale));
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    guard++;
+  }
   return result;
 };
 

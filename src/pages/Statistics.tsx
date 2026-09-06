@@ -5,7 +5,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/common/StatCard';
 import { PeriodSelector, PeriodType, DateRange } from '../components/ui/PeriodSelector';
-import { getExpensesByCategory, getMonthlyTrends, getPeriodRange, filterByPeriod } from '../utils/analytics';
+import { getExpensesByCategory, getMonthlyTrendsForRange, getPeriodRange, filterByPeriod } from '../utils/analytics';
 import { getCategoryColor, formatAxisValue } from '../utils/formatters';
 import { LocaleCode } from '../types';
 import {
@@ -36,8 +36,10 @@ export const Statistics: React.FC = () => {
   const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
 
   // Filter transactions based on selected period
+  const periodRange = useMemo(() => getPeriodRange(period, customRange), [period, customRange]);
+
   const filteredData = useMemo(() => {
-    const range = getPeriodRange(period, customRange);
+    const range = periodRange;
     const incs = filterByPeriod(incomes, range);
     const exps = filterByPeriod(expenses, range);
 
@@ -57,9 +59,14 @@ export const Statistics: React.FC = () => {
       savingsRate,
       categoryBreakdown,
     };
-  }, [incomes, expenses, period, customRange]);
+  }, [incomes, expenses, periodRange]);
 
-  const monthlyTrends = getMonthlyTrends(incomes, expenses, 6, i18n.language as LocaleCode);
+  // Follows the same period filter as the KPI cards and the pie chart above, instead of
+  // always showing a fixed trailing 6 months regardless of what's selected.
+  const monthlyTrends = useMemo(
+    () => getMonthlyTrendsForRange(incomes, expenses, periodRange, i18n.language as LocaleCode),
+    [incomes, expenses, periodRange, i18n.language]
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -121,12 +128,6 @@ export const Statistics: React.FC = () => {
                 <BarChart3 className="w-4 h-4 text-blue-500" />
                 <span>{t('statistics.incomeVsExpense')}</span>
               </h3>
-              {/* This chart is always the last six months, unlike the KPI cards above it,
-                  which follow the period selector. Saying so stops the two from looking
-                  like they disagree. */}
-              <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5 ml-6">
-                {t('statistics.chartRange')}
-              </p>
             </div>
 
             <div className="flex items-center gap-3 text-[11px] font-medium shrink-0">

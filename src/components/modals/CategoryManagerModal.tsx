@@ -331,7 +331,9 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                       ) : (
                         <div className="flex items-center gap-1.5 shrink-0 animate-fade-in">
                           <span className="text-[11px] text-rose-500 font-semibold hidden sm:inline">
-                            {t('categories.deleteConfirm')}
+                            {count > 0
+                              ? t('categories.deleteConfirmWithOps', { n: count })
+                              : t('categories.deleteConfirm')}
                           </span>
                           <button
                             type="button"

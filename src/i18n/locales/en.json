@@ -457,7 +457,8 @@
     "ownPlaceholderIncome": "Category name (e.g. 'Crypto')",
     "ownPlaceholderExpense": "Category name (e.g. 'Sport')",
     "add": "Add",
-    "syncFailed": "Could not save the category. Please try again"
+    "syncFailed": "Could not save the category. Please try again",
+    "deleteConfirmWithOps": "Delete? ({{n}} → Other)"
   },
   "datePicker": {
     "placeholder": "dd.mm.yyyy",

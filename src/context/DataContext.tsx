@@ -187,8 +187,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const deleteCategoryMutation = useMutation({
-    mutationFn: (id: string) => categoryService.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customCategories', userId] }),
+    // Category is stored on incomes/expenses as a plain name string with no foreign
+    // key — deleting the category used to leave every transaction that referenced it
+    // pointing at a name that no longer exists anywhere (blank/raw text in every list,
+    // filter and chart that looks it up). Reassign them to the same catch-all a
+    // deleted default category would use ('other' for income, 'miscellaneous' for
+    // expense) before the category itself is removed, so nothing is left dangling.
+    mutationFn: async (id: string) => {
+      const cat = customCategories.find((c) => c.id === id);
+      if (cat) {
+        if (cat.type === 'income') {
+          const affected = incomes.filter((i) => i.category === cat.name);
+          await Promise.all(affected.map((i) => incomeService.update(i.id, { category: 'other' })));
+        } else {
+          const affected = expenses.filter((e) => e.category === cat.name);
+          await Promise.all(affected.map((e) => expenseService.update(e.id, { category: 'miscellaneous' })));
+        }
+      }
+      await categoryService.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customCategories', userId] });
+      queryClient.invalidateQueries({ queryKey: ['incomes', userId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+    },
   });
 
   const refetchAll = async () => {
