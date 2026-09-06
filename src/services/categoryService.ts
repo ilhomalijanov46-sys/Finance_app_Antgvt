@@ -1,5 +1,5 @@
-import { supabase, isSupabaseConfigured } from './supabase';
-import { localDemoStore } from './mockData';
+import { supabase } from './supabase';
+import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
 import { CustomCategory } from '../types';
 
@@ -10,11 +10,11 @@ import { CustomCategory } from '../types';
  */
 export const categoryService = {
   getAll: async (userId: string): Promise<CustomCategory[]> => {
-    if (userId === 'demo-user-777' || isDemoContext() || !isSupabaseConfigured || !supabase) {
+    if (isDemoContext()) {
       return localDemoStore.getCategories();
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('custom_categories')
       .select('*')
       .eq('user_id', userId)
@@ -29,8 +29,8 @@ export const categoryService = {
   },
 
   create: async (category: Omit<CustomCategory, 'id' | 'created_at'>): Promise<CustomCategory> => {
-    if (!isDemoContext() && supabase && category.user_id && category.user_id !== 'demo-user-777') {
-      const { data, error } = await supabase
+    if (!isDemoContext()) {
+      const { data, error } = await supabase!
         .from('custom_categories')
         .insert([category])
         .select()
@@ -46,16 +46,16 @@ export const categoryService = {
 
     const newCategory: CustomCategory = {
       ...category,
-      id: 'cat-custom-' + Date.now(),
+      id: 'cat-custom-' + crypto.randomUUID(),
       created_at: new Date().toISOString(),
     };
-    localDemoStore.setCategories([...localDemoStore.getCategories(), newCategory]);
+    assertWritten(localDemoStore.setCategories([...localDemoStore.getCategories(), newCategory]));
     return newCategory;
   },
 
   delete: async (id: string): Promise<void> => {
-    if (!isDemoContext() && supabase && !id.startsWith('cat-custom-')) {
-      const { error } = await supabase.from('custom_categories').delete().eq('id', id);
+    if (!isDemoContext()) {
+      const { error } = await supabase!.from('custom_categories').delete().eq('id', id);
       if (error) {
         console.error('Failed to delete custom category in Supabase:', error);
         throw error;
@@ -63,6 +63,8 @@ export const categoryService = {
       return;
     }
 
-    localDemoStore.setCategories(localDemoStore.getCategories().filter((c) => c.id !== id));
+    assertWritten(
+      localDemoStore.setCategories(localDemoStore.getCategories().filter((c) => c.id !== id))
+    );
   },
 };

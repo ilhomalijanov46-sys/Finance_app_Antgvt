@@ -260,7 +260,10 @@
     "capped": "Credited {{value}} — that was all the goal had left",
     "overdue": "Overdue",
     "overdueOn": "Deadline passed {{date}}",
-    "completedCount": "Goals completed"
+    "completedCount": "Goals completed",
+    "errors": {
+      "invalidAmount": "Enter a positive amount"
+    }
   },
   "calendar": {
     "title": "Cash Flow Calendar",
@@ -464,6 +467,7 @@
     "jwtExpired": "Your session has expired. Please sign in again",
     "network": "Could not reach the server. Check your internet connection",
     "generic": "Could not save the record",
-    "missingSchema": "The database is missing a required table or column. Apply the migrations from supabase/migrations in the Supabase SQL editor. Details: {{details}}"
+    "missingSchema": "The database is missing a required table or column. Apply the migrations from supabase/migrations in the Supabase SQL editor. Details: {{details}}",
+    "localStorageFailed": "Couldn't save: the browser's local storage is blocked or full"
   }
 }

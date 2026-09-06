@@ -260,7 +260,10 @@
     "capped": "{{value}} kiritildi — maqsadgacha shuncha qolgan edi",
     "overdue": "Muddati o‘tgan",
     "overdueOn": "Muddati {{date}} da tugagan",
-    "completedCount": "Bajarilgan maqsadlar"
+    "completedCount": "Bajarilgan maqsadlar",
+    "errors": {
+      "invalidAmount": "Musbat summani kiriting"
+    }
   },
   "calendar": {
     "title": "Moliyaviy taqvim",
@@ -464,6 +467,7 @@
     "jwtExpired": "Sessiya muddati tugadi. Qaytadan tizimga kiring",
     "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
     "generic": "Yozuvni saqlab bo'lmadi",
-    "missingSchema": "Ma'lumotlar bazasida kerakli jadval yoki ustun yo'q. supabase/migrations dagi migratsiyalarni Supabase SQL muharririda bajaring. Tafsilotlar: {{details}}"
+    "missingSchema": "Ma'lumotlar bazasida kerakli jadval yoki ustun yo'q. supabase/migrations dagi migratsiyalarni Supabase SQL muharririda bajaring. Tafsilotlar: {{details}}",
+    "localStorageFailed": "Saqlab bo'lmadi: brauzerning lokal xotirasi bloklangan yoki to'lgan"
   }
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
 import { incomeService } from '../services/incomeService';
@@ -8,7 +8,6 @@ import { goalService } from '../services/goalService';
 import { categoryService } from '../services/categoryService';
 import { Income, Expense, Budget, Goal, FinancialSummary, CustomCategory } from '../types';
 import { calculateSummary } from '../utils/analytics';
-import i18n from '../i18n/i18n';
 
 interface DataContextType {
   incomes: Income[];
@@ -47,6 +46,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const userId = user?.id || 'demo-user-777';
 
   const enabled = Boolean(user);
+
+  // A sign-out (userId -> null) or switching accounts (real -> demo, or one real
+  // account to another) must not leave the previous account's rows sitting in the
+  // React Query cache: query keys are namespaced by userId so nothing would render
+  // them by mistake, but they lingered in memory for the rest of the tab's lifetime.
+  const previousUserIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const currentId = user?.id ?? null;
+    if (previousUserIdRef.current && currentId !== previousUserIdRef.current) {
+      queryClient.clear();
+    }
+    previousUserIdRef.current = currentId;
+  }, [user?.id, queryClient]);
 
   // 0. Custom categories — a per-account query like every other collection, so they are
   // scoped to the signed-in user instead of a single browser-wide localStorage list.
@@ -145,34 +157,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const depositGoalMutation = useMutation({
-    mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
+    // The deposit and its linked expense (charging the balance for only what the goal
+    // actually accepted, since a deposit is capped at the target) are now a single
+    // operation inside goalService.deposit — atomic server-side for a real account, see
+    // its own doc comment.
+    mutationFn: ({ id, amount }: { id: string; amount: number }) => {
       const targetGoal = goals.find((g) => g.id === id);
-      const { goal: updated, applied } = await goalService.deposit(id, amount);
-
-      // Automatically record expense to deduct from net balance. Charge only what the
-      // goal actually accepted: a deposit is capped at the target, and billing the full
-      // request would take money off the balance that never reached the goal.
-      if (applied > 0) {
-        const now = new Date();
-        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        await expenseService.create({
-          user_id: userId,
-          amount: applied,
-          category: 'transfer',
-          payment_method: 'card',
-          date: dateStr,
-          time: timeStr,
-          note: i18n.t('goals.transferNote', {
-            title: targetGoal?.title || i18n.t('goals.defaultTitle'),
-          }),
-        });
-      }
-
-      return updated;
+      return goalService.deposit(id, amount, targetGoal?.title).then((r) => r.goal);
     },
-    onSuccess: () => {
+    // onSettled rather than onSuccess: even if the mutation throws (e.g. the RPC's
+    // transaction rolled back), the goal row may have changed under a concurrent
+    // deposit from another tab, so the cache is refreshed either way instead of being
+    // left showing a stale amount.
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['goals', userId] });
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
     },
@@ -219,38 +216,66 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadError = (collections.find((q) => q.error)?.error as Error | undefined) ?? null;
 
-  return (
-    <DataContext.Provider
-      value={{
-        incomes,
-        expenses,
-        budgets,
-        goals,
-        customCategories,
-        summary,
-        isLoading,
-        loadError,
-        isPaused,
-        addIncome: (inc) => addIncomeMutation.mutateAsync(inc),
-        updateIncome: (id, updates) => updateIncomeMutation.mutateAsync({ id, updates }),
-        deleteIncome: (id) => deleteIncomeMutation.mutateAsync(id),
-        addExpense: (exp) => addExpenseMutation.mutateAsync(exp),
-        updateExpense: (id, updates) => updateExpenseMutation.mutateAsync({ id, updates }),
-        deleteExpense: (id) => deleteExpenseMutation.mutateAsync(id),
-        saveBudget: (bud) => saveBudgetMutation.mutateAsync(bud),
-        deleteBudget: (id) => deleteBudgetMutation.mutateAsync(id),
-        addGoal: (goal) => addGoalMutation.mutateAsync(goal),
-        updateGoal: (id, updates) => updateGoalMutation.mutateAsync({ id, updates }),
-        depositToGoal: (id, amount) => depositGoalMutation.mutateAsync({ id, amount }),
-        deleteGoal: (id) => deleteGoalMutation.mutateAsync(id),
-        addCustomCategory: (cat) => addCategoryMutation.mutateAsync(cat),
-        deleteCustomCategory: (id) => deleteCategoryMutation.mutateAsync(id),
-        refetchAll,
-      }}
-    >
-      {children}
-    </DataContext.Provider>
+  // useMutation's mutateAsync reference is stable for the lifetime of the hook
+  // instance, so memoizing on the data + the mutation objects themselves stops this
+  // value from being a fresh object on every render — which previously re-rendered
+  // every page consuming useData() on any unrelated state change anywhere above it.
+  const value = useMemo<DataContextType>(
+    () => ({
+      incomes,
+      expenses,
+      budgets,
+      goals,
+      customCategories,
+      summary,
+      isLoading,
+      loadError,
+      isPaused,
+      addIncome: (inc) => addIncomeMutation.mutateAsync(inc),
+      updateIncome: (id, updates) => updateIncomeMutation.mutateAsync({ id, updates }),
+      deleteIncome: (id) => deleteIncomeMutation.mutateAsync(id),
+      addExpense: (exp) => addExpenseMutation.mutateAsync(exp),
+      updateExpense: (id, updates) => updateExpenseMutation.mutateAsync({ id, updates }),
+      deleteExpense: (id) => deleteExpenseMutation.mutateAsync(id),
+      saveBudget: (bud) => saveBudgetMutation.mutateAsync(bud),
+      deleteBudget: (id) => deleteBudgetMutation.mutateAsync(id),
+      addGoal: (goal) => addGoalMutation.mutateAsync(goal),
+      updateGoal: (id, updates) => updateGoalMutation.mutateAsync({ id, updates }),
+      depositToGoal: (id, amount) => depositGoalMutation.mutateAsync({ id, amount }),
+      deleteGoal: (id) => deleteGoalMutation.mutateAsync(id),
+      addCustomCategory: (cat) => addCategoryMutation.mutateAsync(cat),
+      deleteCustomCategory: (id) => deleteCategoryMutation.mutateAsync(id),
+      refetchAll,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      incomes,
+      expenses,
+      budgets,
+      goals,
+      customCategories,
+      summary,
+      isLoading,
+      loadError,
+      isPaused,
+      addIncomeMutation,
+      updateIncomeMutation,
+      deleteIncomeMutation,
+      addExpenseMutation,
+      updateExpenseMutation,
+      deleteExpenseMutation,
+      saveBudgetMutation,
+      deleteBudgetMutation,
+      addGoalMutation,
+      updateGoalMutation,
+      depositGoalMutation,
+      deleteGoalMutation,
+      addCategoryMutation,
+      deleteCategoryMutation,
+    ]
   );
+
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
 
 export const useData = () => {

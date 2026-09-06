@@ -355,98 +355,131 @@ export const INITIAL_CUSTOM_CATEGORIES: import('../types').CustomCategory[] = [
   { id: 'cat-custom-3', name: 'Спорт и Фитнес', type: 'expense', color: '#06b6d4' },
 ];
 
+/** JSON round-trip clone: the safe way to hand out a copy of one of the INITIAL_*
+ * constants above without letting a caller's later in-place mutation (an update by
+ * index, a sort) corrupt the shared module-level array itself. */
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+
+/** Thrown by demo-mode service methods when a write to localStorage silently failed
+ * (quota exceeded, private browsing, blocked storage) — formatDbError recognises this
+ * type and shows a translated message instead of the operation reporting success while
+ * nothing was actually saved. */
+export class LocalStorageWriteError extends Error {
+  constructor() {
+    super('local storage write failed');
+    this.name = 'LocalStorageWriteError';
+  }
+}
+
+/** Call with the boolean a localDemoStore setter returned; throws if it was `false`. */
+export const assertWritten = (ok: boolean): void => {
+  if (!ok) throw new LocalStorageWriteError();
+};
+
 export const localDemoStore = {
   getUser: (): UserProfile => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.USER);
-      return stored ? JSON.parse(stored) : DEMO_USER;
+      return stored ? JSON.parse(stored) : clone(DEMO_USER);
     } catch {
-      return DEMO_USER;
+      return clone(DEMO_USER);
     }
   },
-  setUser: (user: UserProfile): void => {
+  setUser: (user: UserProfile): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
   getIncomes: (): Income[] => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.INCOMES);
-      return stored ? JSON.parse(stored) : INITIAL_INCOMES;
+      return stored ? JSON.parse(stored) : clone(INITIAL_INCOMES);
     } catch {
-      return INITIAL_INCOMES;
+      return clone(INITIAL_INCOMES);
     }
   },
-  setIncomes: (incomes: Income[]): void => {
+  setIncomes: (incomes: Income[]): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.INCOMES, JSON.stringify(incomes));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
   getExpenses: (): Expense[] => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-      return stored ? JSON.parse(stored) : INITIAL_EXPENSES;
+      return stored ? JSON.parse(stored) : clone(INITIAL_EXPENSES);
     } catch {
-      return INITIAL_EXPENSES;
+      return clone(INITIAL_EXPENSES);
     }
   },
-  setExpenses: (expenses: Expense[]): void => {
+  setExpenses: (expenses: Expense[]): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
   getBudgets: (): Budget[] => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.BUDGETS);
-      return stored ? JSON.parse(stored) : INITIAL_BUDGETS;
+      return stored ? JSON.parse(stored) : clone(INITIAL_BUDGETS);
     } catch {
-      return INITIAL_BUDGETS;
+      return clone(INITIAL_BUDGETS);
     }
   },
-  setBudgets: (budgets: Budget[]): void => {
+  setBudgets: (budgets: Budget[]): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(budgets));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
   getGoals: (): Goal[] => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.GOALS);
-      return stored ? JSON.parse(stored) : INITIAL_GOALS;
+      return stored ? JSON.parse(stored) : clone(INITIAL_GOALS);
     } catch {
-      return INITIAL_GOALS;
+      return clone(INITIAL_GOALS);
     }
   },
-  setGoals: (goals: Goal[]): void => {
+  setGoals: (goals: Goal[]): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
   getCategories: (): import('../types').CustomCategory[] => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      return stored ? JSON.parse(stored) : INITIAL_CUSTOM_CATEGORIES;
+      return stored ? JSON.parse(stored) : clone(INITIAL_CUSTOM_CATEGORIES);
     } catch {
-      return INITIAL_CUSTOM_CATEGORIES;
+      return clone(INITIAL_CUSTOM_CATEGORIES);
     }
   },
-  setCategories: (categories: import('../types').CustomCategory[]): void => {
+  setCategories: (categories: import('../types').CustomCategory[]): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
-  resetToDefaults: (): void => {
+  resetToDefaults: (): boolean => {
     try {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEMO_USER));
       localStorage.setItem(STORAGE_KEYS.INCOMES, JSON.stringify(INITIAL_INCOMES));
@@ -454,14 +487,28 @@ export const localDemoStore = {
       localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(INITIAL_BUDGETS));
       localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(INITIAL_GOALS));
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CUSTOM_CATEGORIES));
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   },
   isDemoSession: (): boolean => {
-    return localStorage.getItem(STORAGE_KEYS.IS_DEMO) === 'true';
+    // Unlike every other method here, this one used to skip the try/catch — and it sits
+    // on the hottest path in the app: isDemoContext() calls it, and every single service
+    // method calls that. A blocked localStorage (Safari private mode, a strict corporate
+    // policy) threw a SecurityError here and took the entire data layer down with it.
+    try {
+      return localStorage.getItem(STORAGE_KEYS.IS_DEMO) === 'true';
+    } catch {
+      return false;
+    }
   },
   setDemoSession: (isDemo: boolean): void => {
-    localStorage.setItem(STORAGE_KEYS.IS_DEMO, isDemo ? 'true' : 'false');
+    try {
+      localStorage.setItem(STORAGE_KEYS.IS_DEMO, isDemo ? 'true' : 'false');
+    } catch (e) {
+      console.error(e);
+    }
   },
 };

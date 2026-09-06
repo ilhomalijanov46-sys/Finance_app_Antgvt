@@ -1,4 +1,5 @@
 import i18n from '../i18n/i18n';
+import { LocalStorageWriteError } from '../services/mockData';
 
 /**
  * Formats Supabase/PostgREST errors raised while saving a record into friendly
@@ -14,6 +15,10 @@ interface PostgrestLikeError {
 export function formatDbError(error: unknown, fallbackKey = 'dbErrors.generic'): string {
   const t = i18n.t.bind(i18n);
   if (!error) return t(fallbackKey);
+
+  if (error instanceof LocalStorageWriteError) {
+    return t('dbErrors.localStorageFailed');
+  }
 
   const err = (typeof error === 'object' ? error : {}) as PostgrestLikeError;
   const rawMessage = err.message || (error instanceof Error ? error.message : String(error));

@@ -1,21 +1,25 @@
-import { supabase, isSupabaseConfigured } from './supabase';
-import { localDemoStore } from './mockData';
+import { supabase } from './supabase';
+import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
 import { Expense } from '../types';
 
 export const expenseService = {
   getAll: async (userId: string): Promise<Expense[]> => {
-    // If Demo user mode
-    if (userId === 'demo-user-777' || !isSupabaseConfigured || !supabase) {
+    // isDemoContext() is the single source of truth for "which store handles this
+    // account" — every method below branches on it (previously create/getAll checked
+    // userId === 'demo-user-777' while update/delete checked isDemoContext(), so a
+    // stale demo flag could make a real account's edits vanish into localStorage while
+    // its reads and creates still hit Supabase).
+    if (isDemoContext()) {
       return localDemoStore.getExpenses();
     }
 
-    // Real Supabase user
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('expenses')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .order('time', { ascending: false, nullsFirst: false });
 
     if (error) {
       // Rethrow: a failed read must reach the UI as an error, not as "no records".
@@ -27,8 +31,8 @@ export const expenseService = {
   },
 
   create: async (expense: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> => {
-    if (isSupabaseConfigured && supabase && expense.user_id !== 'demo-user-777') {
-      const { data, error } = await supabase
+    if (!isDemoContext()) {
+      const { data, error } = await supabase!
         .from('expenses')
         .insert([expense])
         .select()
@@ -39,25 +43,22 @@ export const expenseService = {
         throw error;
       }
 
-      if (data) {
-        return data as Expense;
-      }
+      return data as Expense;
     }
 
-    // Fallback for Demo mode
     const newExpense: Expense = {
       ...expense,
-      id: 'exp-' + Date.now(),
+      id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
     };
     const current = localDemoStore.getExpenses();
-    localDemoStore.setExpenses([newExpense, ...current]);
+    assertWritten(localDemoStore.setExpenses([newExpense, ...current]));
     return newExpense;
   },
 
   update: async (id: string, updates: Partial<Omit<Expense, 'id' | 'user_id' | 'created_at'>>): Promise<Expense> => {
-    if (!isDemoContext() && supabase) {
-      const { data, error } = await supabase
+    if (!isDemoContext()) {
+      const { data, error } = await supabase!
         .from('expenses')
         .update(updates)
         .eq('id', id)
@@ -76,15 +77,15 @@ export const expenseService = {
     // Demo mode
     const current = localDemoStore.getExpenses();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
-    localDemoStore.setExpenses(updated);
+    assertWritten(localDemoStore.setExpenses(updated));
     const result = updated.find((item) => item.id === id);
     if (!result) throw new Error('Expense not found');
     return result;
   },
 
   delete: async (id: string): Promise<void> => {
-    if (!isDemoContext() && supabase) {
-      const { error } = await supabase.from('expenses').delete().eq('id', id);
+    if (!isDemoContext()) {
+      const { error } = await supabase!.from('expenses').delete().eq('id', id);
       if (error) {
         console.error('Failed to delete expense in Supabase:', error);
         throw error;
@@ -94,6 +95,6 @@ export const expenseService = {
 
     // Demo mode
     const current = localDemoStore.getExpenses();
-    localDemoStore.setExpenses(current.filter((item) => item.id !== id));
+    assertWritten(localDemoStore.setExpenses(current.filter((item) => item.id !== id)));
   },
 };
