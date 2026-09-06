@@ -71,6 +71,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsDemoMode(demo);
     localDemoStore.setDemoSession(demo);
     if (profile.locale) i18n.changeLanguage(profile.locale);
+    // Cached so useCurrency has a same-session-accurate guess for the instant before
+    // this profile has loaded on the next reload, instead of always starting at USD.
+    if (profile.currency) {
+      try {
+        localStorage.setItem('pft_currency', profile.currency);
+      } catch {
+        // best-effort cache only
+      }
+    }
   };
 
   useEffect(() => {
@@ -264,7 +273,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           key.startsWith('sb-') ||
           key.startsWith('pft_demo') ||
           key.startsWith('pft_is_demo') ||
-          key === 'pft_custom_categories'
+          key === 'pft_custom_categories' ||
+          key === 'pft_currency'
         ) {
           localStorage.removeItem(key);
         }
@@ -301,6 +311,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (updates.locale) {
       i18n.changeLanguage(updates.locale);
       localStorage.setItem('pft_locale', updates.locale);
+    }
+    if (updates.currency) {
+      try {
+        localStorage.setItem('pft_currency', updates.currency);
+      } catch {
+        // best-effort cache only
+      }
     }
   };
 
