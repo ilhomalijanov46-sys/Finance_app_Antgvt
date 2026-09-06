@@ -480,5 +480,11 @@
     "generic": "Yozuvni saqlab bo'lmadi",
     "missingSchema": "Ma'lumotlar bazasida kerakli jadval yoki ustun yo'q. supabase/migrations dagi migratsiyalarni Supabase SQL muharririda bajaring. Tafsilotlar: {{details}}",
     "localStorageFailed": "Saqlab bo'lmadi: brauzerning lokal xotirasi bloklangan yoki to'lgan"
+  },
+  "timePicker": {
+    "placeholder": "ss:dd",
+    "hours": "Soat",
+    "minutes": "Daqiqa",
+    "now": "Hozir"
   }
 }
