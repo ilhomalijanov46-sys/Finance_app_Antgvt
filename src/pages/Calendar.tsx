@@ -195,7 +195,10 @@ export const Calendar: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100 capitalize">
+            {/* monthTitle is "month year" (e.g. "сентябрь 2026 г."), not a single word —
+                `capitalize` title-cases every word ("Сентябрь 2026 Г."), which is wrong
+                for a locale where only the sentence needs capitalizing, not "г.". */}
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100 first-letter:uppercase">
               {monthTitle}
             </h1>
           </div>
