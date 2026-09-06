@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/ui/Input';
@@ -13,13 +13,16 @@ import { formatAuthError } from '../utils/authErrors';
 
 export const Login: React.FC = () => {
   const { t } = useTranslation();
-  const { signIn } = useAuth();
+  const { signIn, signInDemo } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,12 +39,23 @@ export const Login: React.FC = () => {
     setSubmitting(true);
     try {
       await signIn(email.trim(), password);
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (err: unknown) {
       console.error('Sign in error:', err);
       setError(formatAuthError(err, 'auth.errors.signInFailed'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDemo = async () => {
+    setError('');
+    setDemoLoading(true);
+    try {
+      await signInDemo();
+      navigate(from, { replace: true });
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -76,7 +90,11 @@ export const Login: React.FC = () => {
             </h2>
 
             {error && (
-              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium"
+              >
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
                 <span>{error}</span>
               </div>
@@ -85,6 +103,7 @@ export const Login: React.FC = () => {
             <Input
               label={t('auth.email')}
               type="email"
+              autoComplete="email"
               placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => {
@@ -98,6 +117,7 @@ export const Login: React.FC = () => {
             <Input
               label={t('auth.password')}
               type="password"
+              autoComplete="current-password"
               placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => {
@@ -106,6 +126,15 @@ export const Login: React.FC = () => {
               }}
               required
             />
+
+            <div className="flex justify-end -mt-2">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors"
+              >
+                {t('auth.forgotPasswordLink')}
+              </Link>
+            </div>
 
             <Button
               type="submit"
@@ -117,7 +146,7 @@ export const Login: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-zinc-800 text-center">
+          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-zinc-800 text-center space-y-3">
             <p className="text-xs text-slate-500 dark:text-zinc-400">
               {t('auth.noAccount')}{' '}
               <Link
@@ -127,6 +156,15 @@ export const Login: React.FC = () => {
                 {t('auth.signUp')}
               </Link>
             </p>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full h-9 text-xs font-medium"
+              isLoading={demoLoading}
+              onClick={handleDemo}
+            >
+              {t('auth.tryDemo')}
+            </Button>
           </div>
         </Card>
 

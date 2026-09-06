@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
@@ -7,11 +7,18 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { PageLoader } from './components/common/PageLoader';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Every route is a separate chunk, so the first paint no longer has to download the
 // charting and form code of pages the user may never open.
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const ForgotPassword = lazy(() =>
+  import('./pages/ForgotPassword').then((m) => ({ default: m.ForgotPassword }))
+);
+const ResetPassword = lazy(() =>
+  import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword }))
+);
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Incomes = lazy(() => import('./pages/Incomes').then((m) => ({ default: m.Incomes })));
 const Expenses = lazy(() => import('./pages/Expenses').then((m) => ({ default: m.Expenses })));
@@ -42,13 +49,16 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <PageLoader fullscreen />;
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Carry the page the visitor was trying to reach so a successful sign-in can
+    // return them there instead of always landing on the dashboard.
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return <>{children}</>;
@@ -72,6 +82,7 @@ export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
+      <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>
           <DataProvider>
@@ -95,6 +106,18 @@ export const App: React.FC = () => {
                     </PublicRoute>
                   }
                 />
+                <Route
+                  path="/forgot-password"
+                  element={
+                    <PublicRoute>
+                      <ForgotPassword />
+                    </PublicRoute>
+                  }
+                />
+                {/* Unwrapped: a recovery-link session must not be bounced away by
+                    PublicRoute (which would treat it as "already signed in") before
+                    the visitor gets to set their new password. */}
+                <Route path="/reset-password" element={<ResetPassword />} />
 
                 {/* Protected App Routes */}
                 <Route
@@ -123,6 +146,7 @@ export const App: React.FC = () => {
           </DataProvider>
         </ThemeProvider>
       </AuthProvider>
+      </ErrorBoundary>
       </MotionConfig>
     </QueryClientProvider>
   );

@@ -19,6 +19,7 @@ export const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [confirmationSent, setConfirmationSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -40,6 +41,10 @@ export const Register: React.FC = () => {
     }
     if (password.length < 6) {
       setError(t('auth.errors.passwordTooShort'));
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError(t('auth.errors.passwordMismatch'));
       return;
     }
 
@@ -108,7 +113,11 @@ export const Register: React.FC = () => {
             </h2>
 
             {error && (
-              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5 animate-fade-in font-medium"
+              >
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
                 <span>{error}</span>
               </div>
@@ -116,6 +125,7 @@ export const Register: React.FC = () => {
 
             <Input
               label={t('auth.name')}
+              autoComplete="name"
               placeholder={t('auth.namePlaceholder')}
               value={name}
               onChange={(e) => {
@@ -129,6 +139,7 @@ export const Register: React.FC = () => {
             <Input
               label={t('auth.email')}
               type="email"
+              autoComplete="email"
               placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => {
@@ -142,6 +153,7 @@ export const Register: React.FC = () => {
               <Input
                 label={t('auth.password')}
                 type="password"
+                autoComplete="new-password"
                 placeholder={t('auth.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => {
@@ -152,6 +164,19 @@ export const Register: React.FC = () => {
                 helperText={t('auth.passwordHint')}
               />
             </div>
+
+            <Input
+              label={t('auth.confirmPassword')}
+              type="password"
+              autoComplete="new-password"
+              placeholder={t('auth.passwordPlaceholder')}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (error) setError('');
+              }}
+              required
+            />
 
             <Button
               type="submit"

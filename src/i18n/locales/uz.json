@@ -52,12 +52,31 @@
       "invalidEmail": "Iltimos, to'g'ri email manzilini kiriting",
       "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
       "notConfigured": "Ma'lumotlar bazasi sozlanmagan",
-      "generic": "Autentifikatsiyada xatolik yuz berdi"
+      "generic": "Autentifikatsiyada xatolik yuz berdi",
+      "passwordMismatch": "Parollar mos kelmadi"
     },
     "demoBadge": "DEMO",
     "passwordHint": "Kamida 6 ta belgi",
     "confirmEmailTitle": "Emailni tasdiqlang",
-    "confirmEmailDesc": "{{email}} manziliga xat yubordik. Ro'yxatdan o'tishni yakunlash uchun xatdagi havolaga o'ting, so'ng tizimga kiring."
+    "confirmEmailDesc": "{{email}} manziliga xat yubordik. Ro'yxatdan o'tishni yakunlash uchun xatdagi havolaga o'ting. Agar bu manzil bilan avval ro'yxatdan o'tgan bo'lsangiz, yangi xat kelmaydi — shunchaki tizimga kiring.",
+    "tryDemo": "Demo versiyasini sinab ko’ring",
+    "forgotPasswordLink": "Parolni unutdingizmi?",
+    "forgotPasswordTitle": "Parolni tiklash",
+    "forgotPasswordDesc": "Ro'yxatdan o'tgan email manzilingizni kiriting — parolni tiklash havolasini yuboramiz.",
+    "sendResetLink": "Havola yuborish",
+    "resetEmailSentTitle": "Pochtangizni tekshiring",
+    "resetEmailSentDesc": "Agar {{email}} manzili bilan hisob mavjud bo'lsa, unga parolni tiklash havolasini yubordik.",
+    "backToLogin": "Kirishga qaytish",
+    "newPassword": "Yangi parol",
+    "resetPasswordTitle": "Yangi parol",
+    "resetPasswordDesc": "Hisobingiz uchun yangi parol o'ylab toping.",
+    "resetPasswordAction": "Parolni saqlash",
+    "resetPasswordSuccessTitle": "Parol o'zgartirildi",
+    "resetPasswordSuccessDesc": "Endi ilovadan yangi parolingiz bilan foydalanishingiz mumkin.",
+    "continueToApp": "Ilovaga o'tish",
+    "invalidResetLinkTitle": "Havola yaroqsiz",
+    "invalidResetLinkDesc": "Bu parolni tiklash havolasi allaqachon ishlatilgan yoki muddati o'tgan.",
+    "requestNewLink": "Yangi havola so’rash"
   },
   "dashboard": {
     "netBalance": "Joriy balans",
@@ -337,7 +356,11 @@
     "importConfirmDesc": "Fayldagi yozuvlar hisobingizga qo'shiladi. Mavjud yozuvlar o'zgarmaydi.",
     "importRunning": "Import qilinmoqda…",
     "importPartial": "{{total}} tadan {{ok}} ta yozuv import qilindi",
-    "saveFailed": "Sozlamalarni saqlab bo'lmadi. Qaytadan urinib ko'ring"
+    "saveFailed": "Sozlamalarni saqlab bo'lmadi. Qaytadan urinib ko'ring",
+    "security": "Xavfsizlik",
+    "changePasswordDesc": "Hisobga kirish uchun parolni almashtirish.",
+    "changePasswordAction": "Parolni almashtirish",
+    "passwordChanged": "Parol o'zgartirildi"
   },
   "validation": {
     "amountPositive": "Miqdor 0 dan katta bo'lishi kerak",

@@ -13,44 +13,55 @@ export const profileService = {
     }
 
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-        if (!error && data) {
-          return data as UserProfile;
-        }
-
-        // If profile doesn't exist yet in the profiles table, create/upsert it
-        const fallbackProfile: UserProfile = {
-          id: userId,
-          email: authUser?.email || '',
-          name: authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'User',
-          avatar_url: authUser?.user_metadata?.avatar_url || '',
-          currency: 'USD',
-          locale: 'ru',
-          theme: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const { data: upserted, error: upsertError } = await supabase
-          .from('profiles')
-          .upsert(fallbackProfile)
-          .select()
-          .single();
-
-        if (!upsertError && upserted) {
-          return upserted as UserProfile;
-        }
-
-        return fallbackProfile;
-      } catch (err) {
-        console.error('Error in getProfile:', err);
+      if (!error && data) {
+        return data as UserProfile;
       }
+
+      // PGRST116 = "The result contains 0 rows": the row genuinely does not exist yet
+      // (first sign-in before the handle_new_user trigger's row is visible, or the
+      // trigger failed). Any OTHER error — network drop, expired JWT, RLS rejection,
+      // timeout — must NOT be treated as "no profile": doing so used to create/upsert
+      // a fallback row with hardcoded USD/ru/system, silently overwriting whatever
+      // currency/locale/theme the user had actually saved.
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error in getProfile:', error);
+        throw error;
+      }
+
+      // Row genuinely missing — create it.
+      const fallbackProfile: UserProfile = {
+        id: userId,
+        email: authUser?.email || '',
+        name: authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'User',
+        avatar_url: authUser?.user_metadata?.avatar_url || '',
+        currency: 'USD',
+        locale: 'ru',
+        theme: 'system',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: upserted, error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(fallbackProfile)
+        .select()
+        .single();
+
+      if (!upsertError && upserted) {
+        return upserted as UserProfile;
+      }
+
+      if (upsertError) {
+        console.error('Failed to create profile row:', upsertError);
+      }
+
+      return fallbackProfile;
     }
 
     // Local fallback for non-Supabase mode
