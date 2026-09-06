@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { DatePicker } from '../ui/DatePicker';
+import { TimePicker } from '../ui/TimePicker';
 import { Button } from '../ui/Button';
 import { getCategoryColor } from '../../utils/formatters';
 import { Plus, X, Tag, AlertCircle } from 'lucide-react';
@@ -95,6 +96,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const selectedCategory = watch('category');
   const selectedPaymentMethod = watch('payment_method');
   const selectedDate = watch('date');
+  const selectedTime = watch('time');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
@@ -301,11 +303,11 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
           error={errors.date?.message}
         />
 
-        <Input
+        <TimePicker
           label={t('incomes.time')}
-          type="time"
+          value={selectedTime}
+          onChange={(e) => setValue('time', e.target.value, { shouldValidate: true, shouldDirty: true })}
           error={errors.time?.message}
-          {...register('time')}
         />
       </div>
 

@@ -99,17 +99,22 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen]);
 
-    // Handle ESC key
+    // Escape closes the popover — and *only* the popover. The Dialog these fields live
+    // in also listens for Escape on window, so without stopping the event here one
+    // press would dismiss the whole form along with the calendar, losing everything
+    // typed into it. Registered in the capture phase so it runs before Dialog's
+    // bubble-phase listener gets the chance.
     useEffect(() => {
+      if (!isOpen) return;
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape' && isOpen) {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
           setIsOpen(false);
+          triggerRef.current?.focus();
         }
       };
-      if (isOpen) {
-        window.addEventListener('keydown', handleKeyDown);
-      }
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handleKeyDown, true);
+      return () => window.removeEventListener('keydown', handleKeyDown, true);
     }, [isOpen]);
 
     const handleSelectDate = (dateStr: string) => {
