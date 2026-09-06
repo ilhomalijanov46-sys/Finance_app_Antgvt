@@ -295,7 +295,8 @@
     "yearLabel": "{{year}} г.",
     "subscription": "Подписка",
     "selectMonth": "Выбрать месяц",
-    "selectYear": "Выбрать год"
+    "selectYear": "Выбрать год",
+    "net": "Итог"
   },
   "statistics": {
     "title": "Аналитика и отчеты",

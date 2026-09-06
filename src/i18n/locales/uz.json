@@ -295,7 +295,8 @@
     "yearLabel": "{{year}}-yil",
     "subscription": "Obuna",
     "selectMonth": "Oyni tanlash",
-    "selectYear": "Yilni tanlash"
+    "selectYear": "Yilni tanlash",
+    "net": "Sof natija"
   },
   "statistics": {
     "title": "Tahlil va Hisobotlar",

@@ -295,7 +295,8 @@
     "yearLabel": "{{year}}",
     "subscription": "Subscription",
     "selectMonth": "Select month",
-    "selectYear": "Select year"
+    "selectYear": "Select year",
+    "net": "Net"
   },
   "statistics": {
     "title": "Analytics & Reports",
