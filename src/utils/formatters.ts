@@ -68,9 +68,19 @@ export const formatDate = (
   if (!dateString) return '';
   const jsLocale = locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US';
   let date: Date;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    const [y, m, d] = dateString.split('-').map(Number);
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  if (isoMatch) {
+    const y = Number(isoMatch[1]);
+    const m = Number(isoMatch[2]);
+    const d = Number(isoMatch[3]);
     date = new Date(y, m - 1, d);
+    // The Date constructor silently rolls an out-of-range day into the next month
+    // instead of failing (new Date(2026, 1, 30) is March 2nd) — this catches that and
+    // falls back to showing the raw string rather than a wrong, differently-numbered
+    // day with no indication anything was off.
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+      return dateString;
+    }
   } else {
     date = new Date(dateString);
   }
