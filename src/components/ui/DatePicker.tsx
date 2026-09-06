@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, useId, forwardRef, useImperativeHandle } from 'react';
 import { cn } from '../../utils/cn';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { formatDate, toDateKey } from '../../utils/formatters';
+import { formatDate, formatDateLocalized, getMonthName, toDateKey } from '../../utils/formatters';
 import { LocaleCode } from '../../types';
 
 export interface DatePickerProps {
@@ -199,13 +199,29 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
         const d = new Date(year, m, 1);
         list.push({
           index: m,
-          name: d.toLocaleString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' }),
+          name: getMonthName(d, locale, 'short'),
         });
       }
       return list;
     }, [year, locale]);
 
     const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>('days');
+
+    // The activeValue-sync effect above only fires when the *value* itself changes —
+    // browsing to a different month and then closing without picking a date left the
+    // popover reopening on that stale month instead of the one relevant to what's
+    // actually selected. Reset whenever the popover opens instead.
+    useEffect(() => {
+      if (!isOpen) return;
+      if (activeValue) {
+        const d = new Date(activeValue + 'T00:00:00');
+        if (!isNaN(d.getTime())) setViewDate(d);
+      } else {
+        setViewDate(new Date());
+      }
+      setViewMode('days');
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     const prevYear = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -227,22 +243,28 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
       setViewMode('months');
     };
 
-    const monthTitle = viewDate.toLocaleString(
-      locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US',
-      { month: 'long', year: 'numeric' }
-    );
+    const monthTitle = formatDateLocalized(viewDate, locale, { month: 'long', year: 'numeric' });
 
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    // A label-derived id collides whenever two pickers share a label, and a Cyrillic
+    // label produced a non-ASCII id — same fix as Input/Select.
+    const generatedId = useId();
+    const inputId = id || generatedId;
+    const messageId = `${inputId}-message`;
 
-    // Year range (current year - 10 to + 5)
+    // Year range (current year - 8 to + 7), widened to always include the year
+    // currently being viewed — otherwise stepping past either edge with the «/»
+    // year-jump buttons left the picker's own "select a year" grid unable to show
+    // (or highlight) the year it was actually sitting on.
     const yearsRange = React.useMemo(() => {
       const currentY = new Date().getFullYear();
+      const start = Math.min(currentY - 8, year);
+      const end = Math.max(currentY + 7, year);
       const yrs = [];
-      for (let y = currentY - 8; y <= currentY + 7; y++) {
+      for (let y = start; y <= end; y++) {
         yrs.push(y);
       }
       return yrs;
-    }, []);
+    }, [year]);
 
     return (
       <div className={cn('w-full space-y-1.5', isOpen ? 'relative z-30' : 'relative z-10')} ref={containerRef}>
@@ -262,6 +284,10 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
             ref={triggerRef}
             type="button"
             disabled={disabled}
+            aria-haspopup="dialog"
+            aria-expanded={isOpen}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error || helperText ? messageId : undefined}
             onClick={() => !disabled && setIsOpen(!isOpen)}
             className={cn(
               'w-full flex items-center justify-between text-sm rounded-xl px-3.5 py-2.5 text-left outline-none transition-colors duration-150',
@@ -275,33 +301,26 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
             )}
           >
             <span className={cn('truncate font-medium', !formattedDisplay && 'text-slate-400 dark:text-zinc-500 font-normal')}>
-              {formattedDisplay || placeholder}
+              {formattedDisplay || placeholder || t('datePicker.placeholder')}
             </span>
-
-            <div className="flex items-center gap-1.5 shrink-0 text-slate-400 dark:text-zinc-500">
-              {activeValue && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={handleClear}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      handleClear(e as unknown as React.MouseEvent);
-                    }
-                  }}
-                  className="p-1 hover:text-slate-700 dark:hover:text-zinc-200 rounded-md transition-colors cursor-pointer"
-                  title={t('common.clear')}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </span>
-              )}
-              <CalendarIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-            </div>
+            <CalendarIcon className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
           </button>
+
+          {/* A real, separate <button> rather than a focusable span nested inside the
+              trigger <button> — a focusable element nested inside another interactive
+              control is not reliably exposed by assistive tech, whatever the visual
+              result looks like. Positioned to sit where the nested version used to. */}
+          {activeValue && !disabled && (
+            <button
+              type="button"
+              onClick={handleClear}
+              title={t('common.clear')}
+              aria-label={t('common.clear')}
+              className="absolute right-9 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {/* Custom Animated Calendar Popover */}
           <AnimatePresence>
@@ -498,11 +517,11 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
         </div>
 
         {error ? (
-          <p className="text-xs text-rose-500 dark:text-rose-400 ml-0.5 animate-fade-in font-medium">
+          <p id={messageId} role="alert" className="text-xs text-rose-500 dark:text-rose-400 ml-0.5 animate-fade-in font-medium">
             {error}
           </p>
         ) : helperText ? (
-          <p className="text-xs text-slate-500 dark:text-zinc-400 ml-0.5">{helperText}</p>
+          <p id={messageId} className="text-xs text-slate-500 dark:text-zinc-400 ml-0.5">{helperText}</p>
         ) : null}
       </div>
     );

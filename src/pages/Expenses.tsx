@@ -14,6 +14,7 @@ import { exportToCSV } from '../utils/exportImport';
 import { Expense, ExpenseCategory, PaymentMethod } from '../types';
 import { CategoryManagerModal } from '../components/modals/CategoryManagerModal';
 import { getCategoryColor, toDateKey } from '../utils/formatters';
+import { getPeriodRange, countDaysInRange } from '../utils/analytics';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingDown,
@@ -67,55 +68,23 @@ export const Expenses: React.FC = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
-  // Filtering
+  // Filtering. Date range math (what "7 days" or "this month" actually spans) lives in
+  // one shared place (utils/analytics.getPeriodRange) instead of being duplicated —
+  // and previously drifting out of sync — across this page, Incomes and Statistics.
+  const periodRange = useMemo(() => getPeriodRange(period, customRange), [period, customRange]);
+
   const filteredExpenses = useMemo(() => {
-    const today = toDateKey();
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = toDateKey(yesterdayDate);
-
-    const sevenDaysAgoDate = new Date();
-    sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = toDateKey(sevenDaysAgoDate);
-
-    const thirtyDaysAgoDate = new Date();
-    thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-    const thirtyDaysAgo = toDateKey(thirtyDaysAgoDate);
-
-    const ninetyDaysAgoDate = new Date();
-    ninetyDaysAgoDate.setDate(ninetyDaysAgoDate.getDate() - 90);
-    const ninetyDaysAgo = toDateKey(ninetyDaysAgoDate);
-
-    const currentYearMonth = today.substring(0, 7);
-
     return expenses.filter((item) => {
-      // 1. Category
       const matchesCategory =
         selectedCategory === 'all' || item.category === selectedCategory;
 
-      // 2. Method
       const matchesMethod =
         selectedMethod === 'all' || item.payment_method === selectedMethod;
 
-      // 3. Date
-      let matchesDate = true;
-      if (period === 'today') {
-        matchesDate = item.date === today;
-      } else if (period === 'yesterday') {
-        matchesDate = item.date === yesterday;
-      } else if (period === '7days') {
-        matchesDate = item.date >= sevenDaysAgo && item.date <= today;
-      } else if (period === '30days') {
-        matchesDate = item.date >= thirtyDaysAgo && item.date <= today;
-      } else if (period === '90days') {
-        matchesDate = item.date >= ninetyDaysAgo && item.date <= today;
-      } else if (period === 'this_month') {
-        matchesDate = item.date.startsWith(currentYearMonth);
-      } else if (period === 'custom' && customRange?.startDate && customRange?.endDate) {
-        matchesDate = item.date >= customRange.startDate && item.date <= customRange.endDate;
-      }
+      const matchesDate = periodRange
+        ? item.date >= periodRange.start && item.date <= periodRange.end
+        : true;
 
-      // 4. Search
       const categoryName = t(`expenses.categories.${item.category}`, { defaultValue: item.category });
       const matchesSearch =
         searchQuery === '' ||
@@ -124,7 +93,7 @@ export const Expenses: React.FC = () => {
 
       return matchesCategory && matchesMethod && matchesDate && matchesSearch;
     });
-  }, [expenses, selectedCategory, selectedMethod, period, customRange, searchQuery, t]);
+  }, [expenses, selectedCategory, selectedMethod, periodRange, searchQuery, t]);
 
   const totalAmount = filteredExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const avgAmount = filteredExpenses.length > 0 ? totalAmount / filteredExpenses.length : 0;
@@ -133,44 +102,18 @@ export const Expenses: React.FC = () => {
   // 30 turned the figure into nonsense the moment the user picked "Today" or a custom
   // range — the card claimed a month's worth of days for a single day of spending.
   const periodDayCount = useMemo(() => {
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    if (periodRange) return countDaysInRange(periodRange);
 
-    const daysBetween = (fromKey: string, toKey: string) => {
-      const [fy, fm, fd] = fromKey.split('-').map(Number);
-      const [ty, tm, td] = toKey.split('-').map(Number);
-      const diff = new Date(ty, tm - 1, td).getTime() - new Date(fy, fm - 1, fd).getTime();
-      return Math.max(1, Math.round(diff / msPerDay) + 1);
-    };
-
-    switch (period) {
-      case 'today':
-      case 'yesterday':
-        return 1;
-      case '7days':
-        return 7;
-      case '30days':
-        return 30;
-      case '90days':
-        return 90;
-      case 'this_month':
-        return startOfToday.getDate();
-      case 'custom':
-        return customRange?.startDate && customRange?.endDate
-          ? daysBetween(customRange.startDate, customRange.endDate)
-          : 1;
-      default: {
-        // "All dates": span from the oldest record on file to today.
-        if (filteredExpenses.length === 0) return 1;
-        const oldest = filteredExpenses.reduce(
-          (min, item) => (item.date < min ? item.date : min),
-          filteredExpenses[0].date
-        );
-        return daysBetween(oldest, toDateKey(startOfToday));
-      }
-    }
-  }, [period, customRange, filteredExpenses]);
+    // "All dates" (getPeriodRange returns null): span from the oldest record on file
+    // to today.
+    if (filteredExpenses.length === 0) return 1;
+    const today = toDateKey();
+    const oldest = filteredExpenses.reduce(
+      (min, item) => (item.date < min ? item.date : min),
+      filteredExpenses[0].date
+    );
+    return countDaysInRange({ start: oldest, end: today });
+  }, [periodRange, filteredExpenses]);
 
   const dailyAvg = totalAmount / periodDayCount;
 

@@ -99,7 +99,10 @@ export interface Goal {
   title: string;
   target_amount: number;
   current_amount: number;
-  deadline?: string; // YYYY-MM-DD
+  // Nullable, not just optional: clearing a goal's deadline has to send an explicit
+  // `null` over the wire (PATCH bodies drop `undefined` keys entirely, so the DB
+  // column would otherwise never actually be cleared).
+  deadline?: string | null; // YYYY-MM-DD
   color: string;
   created_at?: string;
 }

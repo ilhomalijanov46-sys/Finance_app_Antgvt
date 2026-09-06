@@ -13,6 +13,10 @@ export interface SelectOption {
 
 export interface SelectProps {
   label?: string;
+  /** For a select with no visible label (e.g. sitting beside another field that
+   * already carries one) — announced to assistive tech without adding a line of
+   * visible text. */
+  ariaLabel?: string;
   error?: string;
   options?: SelectOption[];
   helperText?: string;
@@ -32,6 +36,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     {
       className,
       label,
+      ariaLabel,
       error,
       options,
       helperText,
@@ -70,9 +75,16 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       controlledValue || defaultValue || (parsedOptions[0]?.value ?? '')
     );
     const [isOpen, setIsOpen] = useState(false);
+    // Which row the keyboard cursor is on while the popover is open — separate from
+    // the actual selected value, same as a native <select>'s roving highlight.
+    const [highlightedIndex, setHighlightedIndex] = useState(0);
 
     const activeValue = isControlled ? controlledValue : internalValue;
-    const activeOption = parsedOptions.find((o) => o.value === activeValue) || parsedOptions[0];
+    // No fallback to parsedOptions[0]: showing the first option's label when the
+    // current value doesn't match any of them would silently misrepresent what is
+    // actually stored (e.g. a category that was since renamed or deleted) as
+    // whatever happens to be first in the list.
+    const activeOption = parsedOptions.find((o) => o.value === activeValue);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -97,12 +109,22 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && isOpen) {
           setIsOpen(false);
+          triggerRef.current?.focus();
         }
       };
       if (isOpen) {
         window.addEventListener('keydown', handleKeyDown);
       }
       return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
+
+    // Keep the roving highlight on the actual selection whenever the popover opens.
+    useEffect(() => {
+      if (isOpen) {
+        const idx = parsedOptions.findIndex((o) => o.value === activeValue);
+        setHighlightedIndex(idx >= 0 ? idx : 0);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     const handleSelect = (val: string) => {
@@ -113,12 +135,57 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         onChange({ target: { value: val, name } });
       }
       setIsOpen(false);
+      triggerRef.current?.focus();
+    };
+
+    // Arrow/Home/End/Enter on the closed-or-open trigger — the same keys a native
+    // <select> responds to, none of which worked here before.
+    const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (disabled || parsedOptions.length === 0) return;
+
+      if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        setIsOpen(true);
+        return;
+      }
+
+      if (!isOpen) return;
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setHighlightedIndex((i) => Math.min(parsedOptions.length - 1, i + 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setHighlightedIndex((i) => Math.max(0, i - 1));
+          break;
+        case 'Home':
+          e.preventDefault();
+          setHighlightedIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setHighlightedIndex(parsedOptions.length - 1);
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (parsedOptions[highlightedIndex]) handleSelect(parsedOptions[highlightedIndex].value);
+          break;
+        case 'Tab':
+          setIsOpen(false);
+          break;
+      }
     };
 
     // Same reason as Input: a label-derived id collides whenever two selects share a
     // label, and a Cyrillic label produced a non-ASCII id.
     const generatedId = useId();
     const selectId = id || generatedId;
+    const listboxId = `${selectId}-listbox`;
+    const errorId = `${selectId}-error`;
+    const optionId = (value: string) => `${selectId}-option-${value}`;
 
     return (
       <div className={cn('w-full space-y-1.5', isOpen ? 'relative z-30' : 'relative z-10')} ref={containerRef}>
@@ -140,9 +207,14 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             role="combobox"
             aria-expanded={isOpen}
             aria-haspopup="listbox"
+            aria-controls={listboxId}
+            aria-activedescendant={isOpen && parsedOptions[highlightedIndex] ? optionId(parsedOptions[highlightedIndex].value) : undefined}
             aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            aria-label={!label ? ariaLabel : undefined}
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(!isOpen)}
+            onKeyDown={handleTriggerKeyDown}
             className={cn(
               'w-full flex items-center justify-between text-sm rounded-xl px-3.5 py-2.5 text-left outline-none transition-colors duration-150',
               'bg-slate-100/70 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800/80',
@@ -188,21 +260,30 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                 animate={{ opacity: 1, y: 4, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.98 }}
                 transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                role="listbox"
+                id={listboxId}
+                aria-label={label || ariaLabel}
                 className="absolute left-0 right-0 z-[100] mt-1 max-h-64 overflow-y-auto rounded-2xl p-1.5 backdrop-blur-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl"
               >
                 <div className="space-y-0.5">
-                  {parsedOptions.map((opt) => {
+                  {parsedOptions.map((opt, index) => {
                     const isSelected = opt.value === activeValue;
+                    const isHighlighted = index === highlightedIndex;
                     return (
                       <button
                         key={opt.value}
+                        id={optionId(opt.value)}
+                        role="option"
+                        aria-selected={isSelected}
                         type="button"
                         onClick={() => handleSelect(opt.value)}
+                        onMouseEnter={() => setHighlightedIndex(index)}
                         className={cn(
                           'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors text-left',
                           isSelected
                             ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-semibold'
-                            : 'text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/80'
+                            : 'text-slate-700 dark:text-zinc-300',
+                          isHighlighted && !isSelected && 'bg-slate-100 dark:bg-zinc-800/80'
                         )}
                       >
                         <div className="flex items-center gap-2.5 truncate">
@@ -229,7 +310,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         </div>
 
         {error ? (
-          <p className="text-xs text-rose-500 dark:text-rose-400 ml-0.5 animate-fade-in font-medium">
+          <p id={errorId} role="alert" className="text-xs text-rose-500 dark:text-rose-400 ml-0.5 animate-fade-in font-medium">
             {error}
           </p>
         ) : helperText ? (

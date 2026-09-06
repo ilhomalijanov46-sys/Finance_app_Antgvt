@@ -189,9 +189,13 @@ export const EntityCard: React.FC<EntityCardProps> = ({
         {/* Middle / Bottom: Amount, Method Badge, Date & Time */}
         <div className="mt-4 pt-2 border-t border-slate-100/60 dark:border-zinc-800/60 flex flex-wrap sm:flex-nowrap items-end justify-between gap-2">
           <div className="min-w-0 flex-1">
+            {/* The threshold has to look at what's actually on screen. `format(amount)`
+                spells out the currency ("60 000 000 UZS" — 14 characters) while the raw
+                number is much shorter (8) and never tripped the smaller size, so large
+                UZS amounts overflowed the card. */}
             <span
               className={`font-bold tracking-tight break-words ${
-                String(amount).length > 10 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
+                format(amount).length > 12 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'
               } ${
                 variant === 'income'
                   ? 'text-emerald-600 dark:text-emerald-400'
@@ -246,18 +250,30 @@ export const EntityCard: React.FC<EntityCardProps> = ({
           </div>
         )}
 
-        {/* Trend (for stat cards) */}
+        {/* Trend (for stat cards). Not wired up by any page today, but kept correct
+            rather than merely unused: the arrow and sign must follow which way the
+            number actually moved (trend.percentage's sign), while `isPositive` only
+            decides whether that movement is good news — colour and direction are
+            independent. Coupling them to the same flag (as this used to) would show a
+            rise in spending with a downward arrow, just because a rise in spending is
+            bad news. See StatCard for the same distinction done correctly. */}
         {trend && (
           <div className="mt-2 flex items-center gap-1.5 text-xs font-medium">
-            {trend.isPositive ? (
-              <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400">
-                <TrendingUp className="w-3.5 h-3.5 mr-1" />+{trend.percentage}%
-              </span>
-            ) : (
-              <span className="inline-flex items-center text-rose-600 dark:text-rose-400">
-                <TrendingDown className="w-3.5 h-3.5 mr-1" />-{trend.percentage}%
-              </span>
-            )}
+            <span
+              className={
+                trend.isPositive
+                  ? 'inline-flex items-center text-emerald-600 dark:text-emerald-400'
+                  : 'inline-flex items-center text-rose-600 dark:text-rose-400'
+              }
+            >
+              {trend.percentage >= 0 ? (
+                <TrendingUp className="w-3.5 h-3.5 mr-1" />
+              ) : (
+                <TrendingDown className="w-3.5 h-3.5 mr-1" />
+              )}
+              {trend.percentage > 0 ? '+' : ''}
+              {trend.percentage}%
+            </span>
             <span className="text-slate-400 dark:text-zinc-500">{t('common.vsLastPeriod')}</span>
           </div>
         )}

@@ -5,6 +5,18 @@
 @layer base {
   :root {
     --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+
+    /* Tells the browser which scheme to paint the UI *it* owns: the <input type="time">
+       dropdown, native <select> popups (the month/year jumps on the Calendar page),
+       scrollbars, autofill highlighting. Without this the time picker opened as a
+       glaring white panel on top of the dark dialog — the app's own CSS can't reach
+       those surfaces, only this property can. Dark mode is a `.dark` class on <html>
+       (see ThemeContext), so the override below rides on the same switch. */
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   * {

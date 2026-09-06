@@ -65,7 +65,7 @@
 ### 3.1. Аутентификация и Демо-режим
 - **Страница входа (`/login`)**:
   - Вход по Email и Паролю.
-  - Карточка **"Мгновенный Демо-доступ" (Instant Demo Access)**: один клик позволяет протестировать весь функционал без регистрации.
+  - Кнопка **"Попробовать демо-версию"**: один клик позволяет протестировать весь функционал без регистрации.
   - Переключатели темы и языка прямо на экране входа.
 - **Страница регистрации (`/register`)**:
   - Создание аккаунта (Имя, Email, Пароль).
@@ -117,7 +117,7 @@
 - **Статистические карточки**:
   - Всего расходов.
   - Средний чек расхода.
-  - Среднедневной расход (рассчитан на 30 дней).
+  - Среднедневной расход (делится на число дней, которое реально покрывает выбранный период — «Сегодня» на 1, «30 дней» на 30 и т.д., см. `utils/analytics.getPeriodRange`/`countDaysInRange`).
 - **Поиск и Двойная фильтрация**:
   - Поиск по описанию и категории.
   - Фильтр по 17 категориям (Продукты, Кафе, Транспорт, Такси, Интернет, Связь, ЖКХ, Аренда, Кредиты, Подписки, Развлечения, Одежда, Здоровье, Дом, Путешествия, Питомцы, Разное).
@@ -225,7 +225,7 @@
 Пройдитесь по следующим пунктам в браузере (`http://localhost:5173`):
 
 - [ ] **Вход и Демо**:
-  - [ ] Нажать "Мгновенный Демо-доступ" — вход на дашборд происходит мгновенно.
+  - [ ] Нажать "Попробовать демо-версию" — вход на дашборд происходит мгновенно.
 - [ ] **Переключение тем и языков**:
   - [ ] Переключить тему (Светлая / Темная / Системная) — все цвета и карточки плавно меняются.
   - [ ] Переключить язык (RU -> EN -> UZ) — все меню, карточки, формы и дни недели переводятся корректно.
@@ -284,114 +284,22 @@ VITE_SUPABASE_URL=https://ВАШ_ПРОЕКТ.supabase.co
 VITE_SUPABASE_ANON_KEY=ВАШ_ANON_КЛЮЧ
 ```
 
-### Шаг 3: Выполнение SQL-миграции в Supabase SQL Editor
-Откройте **SQL Editor** в консоли Supabase и выполните следующий скрипт:
+### Шаг 3: Выполнение миграций в Supabase SQL Editor
 
-```sql
--- 1. Таблица профилей пользователей
-create table public.profiles (
-  id uuid references auth.users on delete cascade primary key,
-  email text,
-  name text,
-  avatar_url text,
-  currency text default 'USD',
-  locale text default 'ru',
-  theme text default 'system',
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+> ⚠️ Раньше здесь был инлайн-скрипт SQL. Он разошёлся с реальной схемой (не было
+> `time`/`payment_method` у доходов, таблицы `custom_categories`, индексов, нужных
+> CHECK-ограничений, RPC-функций для атомарного пополнения цели и сброса данных) и
+> заставлял каждую вставку падать с `PGRST204`. Единственный источник правды —
+> файлы в `supabase/migrations/`; дублировать их здесь смысла нет, они и так будут
+> расходиться снова.
 
--- 2. Таблица доходов
-create table public.incomes (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users on delete cascade not null,
-  amount numeric(12, 2) not null check (amount > 0),
-  category text not null,
-  source text,
-  date date not null default current_date,
-  note text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+Откройте **SQL Editor** в консоли Supabase и выполните файлы из `supabase/migrations/`
+**по порядку номеров** (`001_...` → `002_...` → … до последнего), либо одной командой
+через Supabase CLI из корня проекта:
 
--- 3. Таблица расходов
-create table public.expenses (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users on delete cascade not null,
-  amount numeric(12, 2) not null check (amount > 0),
-  category text not null,
-  payment_method text not null check (payment_method in ('card', 'cash', 'transfer')),
-  date date not null default current_date,
-  note text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- 4. Таблица бюджетов
-create table public.budgets (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users on delete cascade not null,
-  category text not null,
-  limit_amount numeric(12, 2) not null check (limit_amount > 0),
-  period text default 'monthly' check (period in ('monthly', 'weekly', 'yearly')),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  constraint unique_user_category unique (user_id, category)
-);
-
--- 5. Таблица целей
-create table public.goals (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users on delete cascade not null,
-  title text not null,
-  target_amount numeric(12, 2) not null check (target_amount > 0),
-  current_amount numeric(12, 2) default 0 check (current_amount >= 0),
-  deadline date,
-  color text default '#0071e3',
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Включение Row Level Security (RLS)
-alter table public.profiles enable row level security;
-alter table public.incomes enable row level security;
-alter table public.expenses enable row level security;
-alter table public.budgets enable row level security;
-alter table public.goals enable row level security;
-
--- RLS Политики безопасности (каждый видит и меняет только свои данные)
-create policy "Users can manage their own profile" on public.profiles
-  for all using (auth.uid() = id);
-
-create policy "Users can manage their own incomes" on public.incomes
-  for all using (auth.uid() = user_id);
-
-create policy "Users can manage their own expenses" on public.expenses
-  for all using (auth.uid() = user_id);
-
-create policy "Users can manage their own budgets" on public.budgets
-  for all using (auth.uid() = user_id);
-
-create policy "Users can manage their own goals" on public.goals
-  for all using (auth.uid() = user_id);
-
--- Триггер для автоматического создания профиля при регистрации
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, name, avatar_url, currency, locale, theme)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
-    null,
-    'USD',
-    'ru',
-    'system'
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create or replace trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+```bash
+supabase link --project-ref ВАШ_PROJECT_REF
+supabase db push
 ```
 
 Приложение автоматически распознает подключенный Supabase и начнет работать с живой базой данных!

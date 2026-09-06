@@ -14,13 +14,16 @@ export const PageLoader: React.FC<PageLoaderProps> = ({ fullscreen = false, show
 
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-label={t('app.loading')}
       className={
         fullscreen
           ? 'h-screen w-screen flex flex-col items-center justify-center bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100'
           : 'flex flex-col items-center justify-center py-24 text-slate-900 dark:text-zinc-100'
       }
     >
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" aria-hidden="true" />
       {showLabel && <p className="text-xs font-medium text-slate-400">{t('app.loading')}</p>}
     </div>
   );

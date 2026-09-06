@@ -48,16 +48,35 @@
       "userAlreadyRegistered": "Bu email allaqachon ro'yxatdan o'tgan. Iltimos, tizimga kiring",
       "enterName": "Iltimos, ismingizni kiriting",
       "rateLimit": "Juda ko'p urinish. 1–2 daqiqa kutib, qaytadan urinib ko'ring",
-      "emailNotConfirmed": "Email hali tasdiqlanmagan. Pochtangizni tekshiring yoki Supabase sozlamalarida tasdiqlashni o'chiring",
+      "emailNotConfirmed": "Email hali tasdiqlanmagan. Pochtangizni tekshiring va xatdagi havolaga o'ting",
       "invalidEmail": "Iltimos, to'g'ri email manzilini kiriting",
       "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
       "notConfigured": "Ma'lumotlar bazasi sozlanmagan",
-      "generic": "Autentifikatsiyada xatolik yuz berdi"
+      "generic": "Autentifikatsiyada xatolik yuz berdi",
+      "passwordMismatch": "Parollar mos kelmadi"
     },
     "demoBadge": "DEMO",
     "passwordHint": "Kamida 6 ta belgi",
     "confirmEmailTitle": "Emailni tasdiqlang",
-    "confirmEmailDesc": "{{email}} manziliga xat yubordik. Ro'yxatdan o'tishni yakunlash uchun xatdagi havolaga o'ting, so'ng tizimga kiring."
+    "confirmEmailDesc": "{{email}} manziliga xat yubordik. Ro'yxatdan o'tishni yakunlash uchun xatdagi havolaga o'ting. Agar bu manzil bilan avval ro'yxatdan o'tgan bo'lsangiz, yangi xat kelmaydi — shunchaki tizimga kiring.",
+    "tryDemo": "Demo versiyasini sinab ko’ring",
+    "forgotPasswordLink": "Parolni unutdingizmi?",
+    "forgotPasswordTitle": "Parolni tiklash",
+    "forgotPasswordDesc": "Ro'yxatdan o'tgan email manzilingizni kiriting — parolni tiklash havolasini yuboramiz.",
+    "sendResetLink": "Havola yuborish",
+    "resetEmailSentTitle": "Pochtangizni tekshiring",
+    "resetEmailSentDesc": "Agar {{email}} manzili bilan hisob mavjud bo'lsa, unga parolni tiklash havolasini yubordik.",
+    "backToLogin": "Kirishga qaytish",
+    "newPassword": "Yangi parol",
+    "resetPasswordTitle": "Yangi parol",
+    "resetPasswordDesc": "Hisobingiz uchun yangi parol o'ylab toping.",
+    "resetPasswordAction": "Parolni saqlash",
+    "resetPasswordSuccessTitle": "Parol o'zgartirildi",
+    "resetPasswordSuccessDesc": "Endi ilovadan yangi parolingiz bilan foydalanishingiz mumkin.",
+    "continueToApp": "Ilovaga o'tish",
+    "invalidResetLinkTitle": "Havola yaroqsiz",
+    "invalidResetLinkDesc": "Bu parolni tiklash havolasi allaqachon ishlatilgan yoki muddati o'tgan.",
+    "requestNewLink": "Yangi havola so’rash"
   },
   "dashboard": {
     "netBalance": "Joriy balans",
@@ -89,7 +108,8 @@
     "storyBudget": "Barcha rejalashtirilgan byudjet chegaralariga to'liq amal qilyapsiz.",
     "savedTotal": "Jamg‘arilgan: {{value}}",
     "goalsTotal": "Jami {{count}} ta maqsad",
-    "storyTopCategory": "{{category}} — eng katta xarajat toifasi: barcha xarajatlarning {{percent}}% ({{value}})."
+    "storyTopCategory": "{{category}} — eng katta xarajat toifasi: barcha xarajatlarning {{percent}}% ({{value}}).",
+    "overspentTotal": "Ortiqcha sarflandi: {{value}}"
   },
   "incomes": {
     "title": "Daromadlar",
@@ -213,7 +233,8 @@
       "monthly": "Oylik limit",
       "yearly": "Yillik limit"
     },
-    "totalLimit": "Umumiy limit"
+    "totalLimit": "Umumiy limit",
+    "willReplaceExisting": "Bu toifa va davr uchun byudjet allaqachon mavjud — u yangi limit bilan almashtiriladi"
   },
   "goals": {
     "title": "Moliyaviy maqsadlar",
@@ -241,7 +262,12 @@
     "capped": "{{value}} kiritildi — maqsadgacha shuncha qolgan edi",
     "overdue": "Muddati o‘tgan",
     "overdueOn": "Muddati {{date}} da tugagan",
-    "completedCount": "Bajarilgan maqsadlar"
+    "completedCount": "Bajarilgan maqsadlar",
+    "errors": {
+      "invalidAmount": "Musbat summani kiriting"
+    },
+    "currentAmountLocked": "\"Mablag' qo'shish\" tugmasi orqali o'zgartiriladi",
+    "deadlineInPast": "Bu sana allaqachon o'tib ketgan"
   },
   "calendar": {
     "title": "Moliyaviy taqvim",
@@ -269,7 +295,8 @@
     "yearLabel": "{{year}}-yil",
     "subscription": "Obuna",
     "selectMonth": "Oyni tanlash",
-    "selectYear": "Yilni tanlash"
+    "selectYear": "Yilni tanlash",
+    "net": "Sof natija"
   },
   "statistics": {
     "title": "Tahlil va Hisobotlar",
@@ -337,7 +364,12 @@
     "importConfirmDesc": "Fayldagi yozuvlar hisobingizga qo'shiladi. Mavjud yozuvlar o'zgarmaydi.",
     "importRunning": "Import qilinmoqda…",
     "importPartial": "{{total}} tadan {{ok}} ta yozuv import qilindi",
-    "saveFailed": "Sozlamalarni saqlab bo'lmadi. Qaytadan urinib ko'ring"
+    "saveFailed": "Sozlamalarni saqlab bo'lmadi. Qaytadan urinib ko'ring",
+    "security": "Xavfsizlik",
+    "changePasswordDesc": "Hisobga kirish uchun parolni almashtirish.",
+    "changePasswordAction": "Parolni almashtirish",
+    "passwordChanged": "Parol o'zgartirildi",
+    "importNothingNew": "Fayldagi barcha yozuvlar hisobda allaqachon mavjud — import qilinadigan narsa yo'q"
   },
   "validation": {
     "amountPositive": "Miqdor 0 dan katta bo'lishi kerak",
@@ -346,7 +378,10 @@
     "currentNonNegative": "Miqdor manfiy bo'lishi mumkin emas",
     "categoryRequired": "Kategoriyani tanlang",
     "limitPositive": "Limit 0 dan katta bo'lishi kerak",
-    "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak"
+    "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak",
+    "amountTooLarge": "Summa juda katta",
+    "categoryDuplicate": "Bunday toifa allaqachon mavjud",
+    "currentExceedsTarget": "Joriy summa maqsaddan oshib ketmasligi kerak"
   },
   "common": {
     "search": "Qidirish...",
@@ -389,7 +424,8 @@
     "selectRange": "Davrni tanlang",
     "apply": "Qo'llash",
     "close": "Yopish",
-    "rangeTooLong": "{{days}} kundan uzoq davr tanlandi. Qisqaroq oraliq tanlang"
+    "rangeTooLong": "{{days}} kundan uzoq davr tanlandi. Qisqaroq oraliq tanlang",
+    "pickDateFirst": "Avval sanani tanlang"
   },
   "categories": {
     "title": "Kategoriyalarni boshqarish",
@@ -421,7 +457,8 @@
     "ownPlaceholderIncome": "Kategoriya nomi (masalan, 'Kriptovalyuta')",
     "ownPlaceholderExpense": "Kategoriya nomi (masalan, 'Sport')",
     "add": "Qo'shish",
-    "syncFailed": "Kategoriyani saqlab bo'lmadi. Qaytadan urinib ko'ring"
+    "syncFailed": "Kategoriyani saqlab bo'lmadi. Qaytadan urinib ko'ring",
+    "deleteConfirmWithOps": "O'chirilsinmi? ({{n}} → Boshqa)"
   },
   "datePicker": {
     "placeholder": "kk.oo.yyyy",
@@ -441,6 +478,7 @@
     "jwtExpired": "Sessiya muddati tugadi. Qaytadan tizimga kiring",
     "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
     "generic": "Yozuvni saqlab bo'lmadi",
-    "missingSchema": "Ma'lumotlar bazasida kerakli jadval yoki ustun yo'q. supabase/migrations dagi migratsiyalarni Supabase SQL muharririda bajaring. Tafsilotlar: {{details}}"
+    "missingSchema": "Ma'lumotlar bazasida kerakli jadval yoki ustun yo'q. supabase/migrations dagi migratsiyalarni Supabase SQL muharririda bajaring. Tafsilotlar: {{details}}",
+    "localStorageFailed": "Saqlab bo'lmadi: brauzerning lokal xotirasi bloklangan yoki to'lgan"
   }
 }

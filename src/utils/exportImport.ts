@@ -1,4 +1,4 @@
-import { Income, Expense, Budget, Goal } from '../types';
+import { Income, Expense, Budget, Goal, CustomCategory } from '../types';
 import { toDateKey } from './formatters';
 
 // Hands the browser a generated file. The object URL is released on a later tick because
@@ -23,6 +23,10 @@ export const exportToJSON = (data: {
   expenses: Expense[];
   budgets: Budget[];
   goals: Goal[];
+  // Previously left out of the backup entirely: a reset wiped custom categories with
+  // no way to bring them back, since the file the user had to restore from never
+  // contained them in the first place.
+  customCategories: CustomCategory[];
 }): void => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   downloadBlob(blob, `finance_backup_${toDateKey()}.json`);
@@ -30,9 +34,14 @@ export const exportToJSON = (data: {
 
 // Every field goes through this: custom category names, sources and notes are free text
 // and may contain commas, quotes or newlines, any of which would otherwise shift the
-// remaining columns of the row.
+// remaining columns of the row. A leading =, +, - or @ is additionally prefixed with a
+// tab: Excel/Sheets otherwise evaluate the cell as a formula, which is a real attack
+// vector when a note or category name came from somewhere the user does not control.
 const csvCell = (value: unknown): string => {
-  const text = value === null || value === undefined ? '' : String(value);
+  let text = value === null || value === undefined ? '' : String(value);
+  if (/^[=+\-@]/.test(text)) {
+    text = `\t${text}`;
+  }
   return `"${text.replace(/"/g, '""')}"`;
 };
 

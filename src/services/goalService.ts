@@ -1,16 +1,23 @@
-import { supabase, isSupabaseConfigured } from './supabase';
-import { localDemoStore } from './mockData';
+import { supabase } from './supabase';
+import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
+import { expenseService } from './expenseService';
 import { Goal } from '../types';
+import { toDateKey } from '../utils/formatters';
+import i18n from '../i18n/i18n';
+
+export interface GoalDepositResult {
+  goal: Goal;
+  applied: number;
+}
 
 export const goalService = {
   getAll: async (userId: string): Promise<Goal[]> => {
-    // If Demo user mode
-    if (userId === 'demo-user-777' || !isSupabaseConfigured || !supabase) {
+    if (isDemoContext()) {
       return localDemoStore.getGoals();
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('goals')
       .select('*')
       .eq('user_id', userId)
@@ -26,8 +33,8 @@ export const goalService = {
   },
 
   create: async (goal: Omit<Goal, 'id' | 'created_at'>): Promise<Goal> => {
-    if (isSupabaseConfigured && supabase && goal.user_id !== 'demo-user-777') {
-      const { data, error } = await supabase
+    if (!isDemoContext()) {
+      const { data, error } = await supabase!
         .from('goals')
         .insert([goal])
         .select()
@@ -38,25 +45,22 @@ export const goalService = {
         throw error;
       }
 
-      if (data) {
-        return data as Goal;
-      }
+      return data as Goal;
     }
 
-    // Fallback for Demo mode
     const newGoal: Goal = {
       ...goal,
-      id: 'goal-' + Date.now(),
+      id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
     };
     const current = localDemoStore.getGoals();
-    localDemoStore.setGoals([newGoal, ...current]);
+    assertWritten(localDemoStore.setGoals([newGoal, ...current]));
     return newGoal;
   },
 
   update: async (id: string, updates: Partial<Omit<Goal, 'id' | 'user_id' | 'created_at'>>): Promise<Goal> => {
-    if (!isDemoContext() && supabase) {
-      const { data, error } = await supabase
+    if (!isDemoContext()) {
+      const { data, error } = await supabase!
         .from('goals')
         .update(updates)
         .eq('id', id)
@@ -75,36 +79,84 @@ export const goalService = {
     // Demo mode
     const current = localDemoStore.getGoals();
     const updated = current.map((item) => (item.id === id ? { ...item, ...updates } : item));
-    localDemoStore.setGoals(updated);
+    assertWritten(localDemoStore.setGoals(updated));
     const result = updated.find((item) => item.id === id);
     if (!result) throw new Error('Goal not found');
     return result;
   },
 
-  deposit: async (id: string, amount: number): Promise<{ goal: Goal; applied: number }> => {
-    let goal: Goal | undefined;
-    if (!isDemoContext() && supabase) {
-      const { data, error } = await supabase.from('goals').select('*').eq('id', id).single();
-      if (error) {
-        console.error('Failed to read goal from Supabase:', error);
-        throw error;
-      }
-      goal = data as Goal;
-    } else {
-      goal = localDemoStore.getGoals().find((g) => g.id === id);
+  /**
+   * Deposits into a goal and records the linked expense that funds it, as a single
+   * operation. For a real account both steps run inside one Postgres transaction (the
+   * deposit_to_goal RPC, migration 005): the goal row is locked with FOR UPDATE so two
+   * concurrent deposits serialize instead of racing a client-side read-modify-write
+   * (which used to let one of two simultaneous deposits silently vanish while both
+   * still charged the balance), and the linked expense insert failing rolls the goal
+   * update back too instead of leaving the goal credited with no matching expense.
+   * The local demo store has no transactions, so its two writes stay best-effort
+   * sequential, same as before.
+   */
+  deposit: async (id: string, amount: number, goalTitle?: string): Promise<GoalDepositResult> => {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Deposit amount must be positive');
     }
 
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const noteText = i18n.t('goals.transferNote', {
+      title: goalTitle || i18n.t('goals.defaultTitle'),
+    });
+
+    if (!isDemoContext()) {
+      const { data, error } = await supabase!.rpc('deposit_to_goal', {
+        p_goal_id: id,
+        p_amount: amount,
+        p_expense_category: 'transfer',
+        p_expense_payment_method: 'card',
+        p_expense_date: toDateKey(now),
+        p_expense_time: timeStr,
+        p_expense_note: noteText,
+      });
+
+      if (error) {
+        console.error('Failed to deposit to goal in Supabase:', error);
+        throw error;
+      }
+      if (!data) throw new Error('Goal not found');
+
+      const result = data as { goal: Goal; applied: number };
+      return { goal: result.goal, applied: Number(result.applied) };
+    }
+
+    // Demo mode
+    const current = localDemoStore.getGoals();
+    const goal = current.find((g) => g.id === id);
     if (!goal) throw new Error('Goal not found');
 
     const previousAmount = Number(goal.current_amount || 0);
     const newAmount = Math.min(goal.target_amount, previousAmount + amount);
+    const applied = newAmount - previousAmount;
+
     const updated = await goalService.update(id, { current_amount: newAmount });
-    return { goal: updated, applied: newAmount - previousAmount };
+
+    if (applied > 0) {
+      await expenseService.create({
+        user_id: goal.user_id,
+        amount: applied,
+        category: 'transfer',
+        payment_method: 'card',
+        date: toDateKey(now),
+        time: timeStr,
+        note: noteText,
+      });
+    }
+
+    return { goal: updated, applied };
   },
 
   delete: async (id: string): Promise<void> => {
-    if (!isDemoContext() && supabase) {
-      const { error } = await supabase.from('goals').delete().eq('id', id);
+    if (!isDemoContext()) {
+      const { error } = await supabase!.from('goals').delete().eq('id', id);
       if (error) {
         console.error('Failed to delete goal in Supabase:', error);
         throw error;
@@ -114,6 +166,6 @@ export const goalService = {
 
     // Demo mode
     const current = localDemoStore.getGoals();
-    localDemoStore.setGoals(current.filter((item) => item.id !== id));
+    assertWritten(localDemoStore.setGoals(current.filter((item) => item.id !== id)));
   },
 };

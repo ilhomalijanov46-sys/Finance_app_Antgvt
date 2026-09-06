@@ -14,6 +14,7 @@ import { formatDbError } from '../utils/dbErrors';
 import { dataService } from '../services/dataService';
 import { CurrencyCode, LocaleCode, ThemeMode } from '../types';
 import { CategoryManagerModal } from '../components/modals/CategoryManagerModal';
+import { formatAuthError } from '../utils/authErrors';
 import {
   Sun,
   Moon,
@@ -25,13 +26,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Tags,
+  KeyRound,
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user, isDemoMode, signOut, updateUserPreferences } = useAuth();
+  const { user, isDemoMode, signOut, updateUserPreferences, updatePassword } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { incomes, expenses, budgets, goals, refetchAll } = useData();
+  const { incomes, expenses, budgets, goals, customCategories, refetchAll } = useData();
 
   const [name, setName] = useState(user?.name || '');
   const [currency, setCurrency] = useState<CurrencyCode>(user?.currency || 'USD');
@@ -42,6 +44,12 @@ export const Profile: React.FC = () => {
   const [importStatus, setImportStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const savedMessageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,8 +96,36 @@ export const Profile: React.FC = () => {
     savedMessageTimer.current = setTimeout(() => setIsSavedMessageVisible(false), 3000);
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError(t('auth.errors.passwordTooShort'));
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError(t('auth.errors.passwordMismatch'));
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await updatePassword(newPassword);
+      setPasswordSuccess(true);
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (err) {
+      console.error('Failed to change password:', err);
+      setPasswordError(formatAuthError(err, 'auth.errors.generic'));
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const handleExportJSON = () => {
-    exportToJSON({ incomes, expenses, budgets, goals });
+    exportToJSON({ incomes, expenses, budgets, goals, customCategories });
   };
 
   const handleExportCSV = () => {
@@ -115,7 +151,7 @@ export const Profile: React.FC = () => {
 
         // Accept the file only if it actually looks like a backup, otherwise any JSON
         // would be imported as an empty dataset and wipe what is already stored.
-        const sections = ['incomes', 'expenses', 'budgets', 'goals'] as const;
+        const sections = ['incomes', 'expenses', 'budgets', 'goals', 'customCategories'] as const;
         const present = sections.filter((key) => Array.isArray(json?.[key]));
         if (present.length === 0) {
           setImportStatus({ ok: false, message: t('profile.importError') });
@@ -125,14 +161,18 @@ export const Profile: React.FC = () => {
         setIsBusy(true);
         setImportStatus({ ok: true, message: t('profile.importRunning') });
 
-        const { imported, total } = await dataService.importBackup(json, user?.id || '');
+        const { imported, total, skippedDuplicate } = await dataService.importBackup(json, user?.id || '');
         await refetchAll();
 
-        setImportStatus(
-          imported === total
-            ? { ok: true, message: t('profile.importSuccess') }
-            : { ok: false, message: t('profile.importPartial', { ok: imported, total }) }
-        );
+        if (imported === total) {
+          setImportStatus({ ok: true, message: t('profile.importSuccess') });
+        } else if (imported === 0 && skippedDuplicate === total) {
+          // Every row in the file already exists in the account — not a failure, just
+          // nothing new to add (re-importing the same backup twice, most commonly).
+          setImportStatus({ ok: true, message: t('profile.importNothingNew') });
+        } else {
+          setImportStatus({ ok: false, message: t('profile.importPartial', { ok: imported, total }) });
+        }
       } catch (err) {
         console.error('Import failed:', err);
         setImportStatus({ ok: false, message: formatDbError(err, 'profile.importError') });
@@ -306,6 +346,66 @@ export const Profile: React.FC = () => {
           </Button>
         </div>
       </Card>
+
+      {/* Security: change password. Meaningless in demo mode — there is no real auth
+          account behind it — so the card is hidden there rather than failing on submit. */}
+      {!isDemoMode && (
+        <Card variant="glass" padding="lg" className="space-y-4">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-blue-500" />
+            <span>{t('profile.security')}</span>
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">
+            {t('profile.changePasswordDesc')}
+          </p>
+
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label={t('auth.newPassword')}
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  if (passwordError) setPasswordError(null);
+                }}
+                helperText={t('auth.passwordHint')}
+              />
+              <Input
+                label={t('auth.confirmPassword')}
+                type="password"
+                autoComplete="new-password"
+                value={confirmNewPassword}
+                onChange={(e) => {
+                  setConfirmNewPassword(e.target.value);
+                  if (passwordError) setPasswordError(null);
+                }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              {passwordSuccess && (
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 animate-fade-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {t('profile.passwordChanged')}
+                </span>
+              )}
+              {!passwordSuccess && passwordError && (
+                <span role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {passwordError}
+                </span>
+              )}
+              {!passwordSuccess && !passwordError && <div />}
+
+              <Button type="submit" variant="secondary" isLoading={isChangingPassword}>
+                {t('profile.changePasswordAction')}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Data Backup & Management */}
       <Card variant="glass" padding="lg" className="space-y-4">

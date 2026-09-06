@@ -37,6 +37,7 @@ export const Goals: React.FC = () => {
   const [depositingGoal, setDepositingGoal] = useState<Goal | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositError, setDepositError] = useState<string | null>(null);
+  const [isDepositSubmitting, setIsDepositSubmitting] = useState(false);
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
 
   const totalTarget = goals.reduce((sum, g) => sum + Number(g.target_amount || 0), 0);
@@ -45,10 +46,19 @@ export const Goals: React.FC = () => {
 
   const handleDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!depositingGoal || !depositAmount || Number(depositAmount) <= 0) return;
+    if (isDepositSubmitting) return; // already in flight — a fast double click/tap must not fire twice
+    if (!depositingGoal) return;
+
+    // A non-positive amount used to be discarded with no feedback at all — the dialog
+    // just sat there as if the click had done nothing.
+    if (!depositAmount || Number(depositAmount) <= 0 || !Number.isFinite(Number(depositAmount))) {
+      setDepositError(t('goals.errors.invalidAmount'));
+      return;
+    }
 
     const amount = Number(depositAmount);
 
+    setIsDepositSubmitting(true);
     // A failing deposit used to reject silently, leaving the dialog open with no hint
     // that anything went wrong. Report it instead of swallowing it.
     let updated;
@@ -56,8 +66,10 @@ export const Goals: React.FC = () => {
       updated = await depositToGoal(depositingGoal.id, amount);
     } catch {
       setDepositError(t('goals.depositFailed'));
+      setIsDepositSubmitting(false);
       return;
     }
+    setIsDepositSubmitting(false);
 
     // If goal reached 100%, trigger confetti celebration!
     if (updated.current_amount >= updated.target_amount) {
@@ -80,7 +92,7 @@ export const Goals: React.FC = () => {
 
   // Compare whole local days, not timestamps: `new Date('2026-08-28')` is midnight UTC,
   // which is still "yesterday" for anyone east of Greenwich.
-  const getDaysLeft = (deadline?: string) => {
+  const getDaysLeft = (deadline?: string | null) => {
     if (!deadline) return null;
     const [y, m, d] = deadline.split('-').map(Number);
     if (!y || !m || !d) return null;
@@ -152,7 +164,9 @@ export const Goals: React.FC = () => {
             const percent = Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100));
             const isCompleted = goal.current_amount >= goal.target_amount;
             const daysLeft = getDaysLeft(goal.deadline);
-            const isOverdue = !isCompleted && daysLeft !== null && daysLeft <= 0;
+            // A deadline of exactly today is not yet overdue — it becomes overdue only
+            // once the day has fully passed (daysLeft goes negative).
+            const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0;
 
             return (
               <motion.div
@@ -193,7 +207,7 @@ export const Goals: React.FC = () => {
                           >
                             <Calendar className="w-3 h-3 text-slate-400" />
                             <span>
-                              {daysLeft !== null && daysLeft > 0
+                              {daysLeft !== null && daysLeft >= 0
                                 ? t('goals.daysLeft', { count: daysLeft })
                                 : t('goals.overdueOn', {
                                     date: formatDate(goal.deadline, locale),
@@ -340,6 +354,7 @@ export const Goals: React.FC = () => {
             <Button
               type="button"
               variant="ghost"
+              disabled={isDepositSubmitting}
               onClick={() => {
                 setDepositingGoal(null);
                 setDepositAmount('');
@@ -348,7 +363,12 @@ export const Goals: React.FC = () => {
             >
               {t('common.cancel')}
             </Button>
-            <Button type="submit" variant="primary" disabled={isDepositTargetComplete}>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isDepositTargetComplete}
+              isLoading={isDepositSubmitting}
+            >
               {t('goals.deposit')}
             </Button>
           </div>

@@ -5,7 +5,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Dialog } from '../components/ui/Dialog';
-import { formatDate, toDateKey } from '../utils/formatters';
+import { formatDate, formatDateLocalized, getMonthName, toDateKey } from '../utils/formatters';
 import { LocaleCode } from '../types';
 import {
   ChevronLeft,
@@ -66,20 +66,25 @@ export const Calendar: React.FC = () => {
       const d = new Date(year, m, 1);
       list.push({
         index: m,
-        name: d.toLocaleString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', { month: 'long' }),
+        name: getMonthName(d, locale, 'long'),
       });
     }
     return list;
   }, [year, locale]);
 
+  // Widens to always include the year currently being viewed: with a fixed window
+  // computed once at mount, stepping past its edge with the ‹‹/›› year buttons left
+  // the <select>'s value pointing at a year with no matching <option>.
   const yearsList = useMemo(() => {
     const currentY = new Date().getFullYear();
+    const start = Math.min(currentY - 6, year);
+    const end = Math.max(currentY + 6, year);
     const list = [];
-    for (let y = currentY - 6; y <= currentY + 6; y++) {
+    for (let y = start; y <= end; y++) {
       list.push(y);
     }
     return list;
-  }, []);
+  }, [year]);
 
   // Build days for month view - ALWAYS 42 cells (6 full rows)
   const monthDays = useMemo(() => {
@@ -180,10 +185,7 @@ export const Calendar: React.FC = () => {
     };
   }, [selectedDayString, incomes, expenses]);
 
-  const monthTitle = currentDate.toLocaleString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const monthTitle = formatDateLocalized(currentDate, locale, { month: 'long', year: 'numeric' });
 
   const weekDayLabels = t('calendar.weekDays', { returnObjects: true }) as string[];
 
@@ -195,7 +197,10 @@ export const Calendar: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100 capitalize">
+            {/* monthTitle is "month year" (e.g. "сентябрь 2026 г."), not a single word —
+                `capitalize` title-cases every word ("Сентябрь 2026 Г."), which is wrong
+                for a locale where only the sentence needs capitalizing, not "г.". */}
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100 first-letter:uppercase">
               {monthTitle}
             </h1>
           </div>
@@ -300,8 +305,17 @@ export const Calendar: React.FC = () => {
             return (
               <div
                 key={`${cell.dateStr}-${idx}`}
+                role="button"
+                tabIndex={0}
+                aria-label={formatDate(cell.dateStr, locale)}
                 onClick={() => setSelectedDayString(cell.dateStr)}
-                className={`min-h-[90px] sm:min-h-[105px] p-2 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedDayString(cell.dateStr);
+                  }
+                }}
+                className={`min-h-[90px] sm:min-h-[105px] p-2 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
                   cell.isCurrentMonth
                     ? 'bg-white/90 dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800/60'
                     : 'bg-slate-50/40 dark:bg-zinc-950/40 opacity-40 hover:opacity-75 hover:bg-slate-100/50 dark:hover:bg-zinc-800/40'
@@ -378,7 +392,7 @@ export const Calendar: React.FC = () => {
       >
         {selectedDayData && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-100/80 dark:bg-zinc-800/60 border border-slate-200/50 dark:border-zinc-700/50 text-xs">
+            <div className="grid grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-100/80 dark:bg-zinc-800/60 border border-slate-200/50 dark:border-zinc-700/50 text-xs">
               <div>
                 <span className="text-slate-500 dark:text-zinc-400">{t('calendar.incomes')}:</span>
                 <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
@@ -389,6 +403,21 @@ export const Calendar: React.FC = () => {
                 <span className="text-slate-500 dark:text-zinc-400">{t('calendar.expenses')}:</span>
                 <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-0.5">
                   −{format(selectedDayData.totalExp)}
+                </p>
+              </div>
+              {/* Computed all along, on every day cell, but never actually shown anywhere
+                  in the UI — the one number that answers "was this a good day or not". */}
+              <div>
+                <span className="text-slate-500 dark:text-zinc-400">{t('calendar.net')}:</span>
+                <p
+                  className={`text-sm font-bold mt-0.5 ${
+                    selectedDayData.net >= 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-rose-600 dark:text-rose-400'
+                  }`}
+                >
+                  {selectedDayData.net >= 0 ? '+' : '−'}
+                  {format(Math.abs(selectedDayData.net))}
                 </p>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { LocaleCode } from '../../types';
-import { toDateKey } from '../../utils/formatters';
+import { toDateKey, getMonthName, formatDateLocalized } from '../../utils/formatters';
 
 
 export type PeriodType =
@@ -66,20 +66,29 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const [rangeError, setRangeError] = useState<string | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const rangeModalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Sync temp dates when modal opens or customRange changes
+  // Sync temp dates AND the visible month when the modal opens. currentViewDate is
+  // otherwise only ever set once (its useState initializer), so reopening the modal
+  // after browsing away from the selected range used to land back on whatever month
+  // was last scrolled to instead of the one actually relevant to the current selection.
   useEffect(() => {
     if (isRangeModalOpen) {
       setRangeError(null);
       if (value === 'custom' && customRange?.startDate && customRange?.endDate) {
         setTempStartDate(customRange.startDate);
         setTempEndDate(customRange.endDate);
+        const [y, m] = customRange.startDate.split('-').map(Number);
+        setCurrentViewDate(new Date(y, m - 1, 1));
       } else {
         setTempStartDate('');
         setTempEndDate('');
+        setCurrentViewDate(new Date());
       }
     }
-  }, [isRangeModalOpen, value, customRange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRangeModalOpen]);
 
   // Escape closes the range modal, then the dropdown
   useEffect(() => {
@@ -92,6 +101,59 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRangeModalOpen, isDropdownOpen]);
+
+  // This modal is a hand-rolled portal rather than the shared Dialog component (its
+  // calendar-grid content doesn't fit Dialog's layout), so it needs the same
+  // accessibility machinery Dialog already provides: focus moved inside on open, a Tab
+  // trap so focus can't wander onto the page behind it, the page not scrolling behind
+  // it, and focus returned to whatever opened it on close.
+  useEffect(() => {
+    if (!isRangeModalOpen) return;
+
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+
+    const focusables = () =>
+      Array.from(
+        rangeModalRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.offsetParent !== null);
+
+    const focusTimer = window.setTimeout(() => {
+      (focusables()[0] ?? rangeModalRef.current)?.focus();
+    }, 0);
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey && (active === first || !rangeModalRef.current?.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTab, true);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', handleTab, true);
+      document.body.style.overflow = overflow;
+      previouslyFocusedRef.current?.focus?.();
+    };
+  }, [isRangeModalOpen]);
 
   // Click outside dropdown
   useEffect(() => {
@@ -111,11 +173,11 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-').map(Number);
     const date = new Date(y, m - 1, d);
-    return new Intl.DateTimeFormat(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
+    return formatDateLocalized(date, locale, {
       day: 'numeric',
       month: 'short',
       year: y !== today.getFullYear() ? 'numeric' : undefined,
-    }).format(date);
+    });
   };
 
   // Label for trigger button
@@ -187,11 +249,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     setCurrentViewDate(new Date(viewYear, viewMonth + 1, 1));
   };
 
-  const monthTitle = useMemo(() => {
-    return new Intl.DateTimeFormat(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
-      month: 'long',
-    }).format(currentViewDate);
-  }, [currentViewDate, locale]);
+  const monthTitle = useMemo(() => getMonthName(currentViewDate, locale, 'long'), [currentViewDate, locale]);
 
   // Generate 42 days grid for viewMonth
   const calendarDays = useMemo(() => {
@@ -265,8 +323,14 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   };
 
   const handleApplyCustomRange = () => {
-    const start = tempStartDate || todayStr;
-    const end = tempEndDate || tempStartDate || todayStr;
+    // No date picked at all used to silently apply "today" with zero indication that
+    // nothing had actually been selected — Apply now requires at least a start date.
+    if (!tempStartDate) {
+      setRangeError(t('periods.pickDateFirst'));
+      return;
+    }
+    const start = tempStartDate;
+    const end = tempEndDate || tempStartDate;
     const range: DateRange = {
       startDate: start <= end ? start : end,
       endDate: start <= end ? end : start,
@@ -372,11 +436,16 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
                 {/* Modal Card */}
                 <motion.div
+                  ref={rangeModalRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={t('periods.custom')}
+                  tabIndex={-1}
                   initial={{ opacity: 0, scale: 0.95, y: 15 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 15 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 340 }}
-                  className="relative z-10 w-full max-w-[380px] rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-2xl p-5 sm:p-6 text-slate-900 dark:text-zinc-100 space-y-4"
+                  className="relative z-10 w-full max-w-[380px] rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-2xl p-5 sm:p-6 text-slate-900 dark:text-zinc-100 space-y-4 outline-none"
                 >
                   {/* Header with circular back & forward and Month > Year */}
                   <div className="flex items-center justify-between">

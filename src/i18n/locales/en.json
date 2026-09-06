@@ -48,16 +48,35 @@
       "userAlreadyRegistered": "This email is already registered. Please sign in instead",
       "enterName": "Please enter your name",
       "rateLimit": "Too many attempts. Wait 1–2 minutes and try again",
-      "emailNotConfirmed": "Email is not confirmed yet. Check your inbox, or turn confirmation off in the Supabase settings",
+      "emailNotConfirmed": "Email is not confirmed yet. Check your inbox and follow the link in the confirmation email",
       "invalidEmail": "Please enter a valid email address",
       "network": "Could not reach the server. Check your internet connection",
       "notConfigured": "The database is not configured",
-      "generic": "Something went wrong while signing you in"
+      "generic": "Something went wrong while signing you in",
+      "passwordMismatch": "Passwords do not match"
     },
     "demoBadge": "DEMO",
     "passwordHint": "At least 6 characters",
     "confirmEmailTitle": "Confirm your email",
-    "confirmEmailDesc": "We sent a message to {{email}}. Follow the link in it to finish signing up, then sign in."
+    "confirmEmailDesc": "We sent a message to {{email}}. Follow the link in it to finish signing up. If you already registered with this address before, no new email will arrive — just sign in instead.",
+    "tryDemo": "Try the demo",
+    "forgotPasswordLink": "Forgot password?",
+    "forgotPasswordTitle": "Reset your password",
+    "forgotPasswordDesc": "Enter the email you signed up with — we'll send you a link to reset your password.",
+    "sendResetLink": "Send reset link",
+    "resetEmailSentTitle": "Check your email",
+    "resetEmailSentDesc": "If an account with {{email}} exists, we've sent a password reset link to it.",
+    "backToLogin": "Back to sign in",
+    "newPassword": "New password",
+    "resetPasswordTitle": "Set a new password",
+    "resetPasswordDesc": "Choose a new password for your account.",
+    "resetPasswordAction": "Save password",
+    "resetPasswordSuccessTitle": "Password changed",
+    "resetPasswordSuccessDesc": "You can now use the app with your new password.",
+    "continueToApp": "Continue to app",
+    "invalidResetLinkTitle": "Link is invalid",
+    "invalidResetLinkDesc": "This password reset link has already been used or has expired.",
+    "requestNewLink": "Request a new link"
   },
   "dashboard": {
     "netBalance": "Net Balance",
@@ -89,7 +108,8 @@
     "storyBudget": "You are within 100% of all planned category budgets.",
     "savedTotal": "Saved: {{value}}",
     "goalsTotal": "{{count}} goals in total",
-    "storyTopCategory": "{{category}} is your largest spending category: {{percent}}% of all expenses ({{value}})."
+    "storyTopCategory": "{{category}} is your largest spending category: {{percent}}% of all expenses ({{value}}).",
+    "overspentTotal": "Overspent: {{value}}"
   },
   "incomes": {
     "title": "Incomes",
@@ -213,7 +233,8 @@
       "monthly": "Monthly limit",
       "yearly": "Yearly limit"
     },
-    "totalLimit": "Total limit"
+    "totalLimit": "Total limit",
+    "willReplaceExisting": "A budget for this category and period already exists — it will be replaced with the new limit"
   },
   "goals": {
     "title": "Financial Goals",
@@ -241,7 +262,12 @@
     "capped": "Credited {{value}} — that was all the goal had left",
     "overdue": "Overdue",
     "overdueOn": "Deadline passed {{date}}",
-    "completedCount": "Goals completed"
+    "completedCount": "Goals completed",
+    "errors": {
+      "invalidAmount": "Enter a positive amount"
+    },
+    "currentAmountLocked": "Changed via the \"Deposit\" button",
+    "deadlineInPast": "This date is already in the past"
   },
   "calendar": {
     "title": "Cash Flow Calendar",
@@ -269,7 +295,8 @@
     "yearLabel": "{{year}}",
     "subscription": "Subscription",
     "selectMonth": "Select month",
-    "selectYear": "Select year"
+    "selectYear": "Select year",
+    "net": "Net"
   },
   "statistics": {
     "title": "Analytics & Reports",
@@ -337,7 +364,12 @@
     "importConfirmDesc": "Records from the file will be added to your account. Existing entries stay untouched.",
     "importRunning": "Importing data…",
     "importPartial": "Imported {{ok}} of {{total}} records",
-    "saveFailed": "Could not save your preferences. Please try again"
+    "saveFailed": "Could not save your preferences. Please try again",
+    "security": "Security",
+    "changePasswordDesc": "Change the password you use to sign in.",
+    "changePasswordAction": "Change password",
+    "passwordChanged": "Password changed",
+    "importNothingNew": "Every record in the file already exists in this account — nothing to import"
   },
   "validation": {
     "amountPositive": "Amount must be greater than 0",
@@ -346,7 +378,10 @@
     "currentNonNegative": "Amount cannot be negative",
     "categoryRequired": "Select a category",
     "limitPositive": "Limit must be greater than 0",
-    "targetPositive": "Goal amount must be greater than 0"
+    "targetPositive": "Goal amount must be greater than 0",
+    "amountTooLarge": "Amount is too large",
+    "categoryDuplicate": "This category already exists",
+    "currentExceedsTarget": "Current amount cannot exceed the target"
   },
   "common": {
     "search": "Search by keyword or memo...",
@@ -389,7 +424,8 @@
     "selectRange": "Select Date Range",
     "apply": "Apply",
     "close": "Close",
-    "rangeTooLong": "Range is longer than {{days}} days. Pick a shorter one"
+    "rangeTooLong": "Range is longer than {{days}} days. Pick a shorter one",
+    "pickDateFirst": "Pick a date first"
   },
   "categories": {
     "title": "Manage Categories",
@@ -421,7 +457,8 @@
     "ownPlaceholderIncome": "Category name (e.g. 'Crypto')",
     "ownPlaceholderExpense": "Category name (e.g. 'Sport')",
     "add": "Add",
-    "syncFailed": "Could not save the category. Please try again"
+    "syncFailed": "Could not save the category. Please try again",
+    "deleteConfirmWithOps": "Delete? ({{n}} → Other)"
   },
   "datePicker": {
     "placeholder": "dd.mm.yyyy",
@@ -441,6 +478,7 @@
     "jwtExpired": "Your session has expired. Please sign in again",
     "network": "Could not reach the server. Check your internet connection",
     "generic": "Could not save the record",
-    "missingSchema": "The database is missing a required table or column. Apply the migrations from supabase/migrations in the Supabase SQL editor. Details: {{details}}"
+    "missingSchema": "The database is missing a required table or column. Apply the migrations from supabase/migrations in the Supabase SQL editor. Details: {{details}}",
+    "localStorageFailed": "Couldn't save: the browser's local storage is blocked or full"
   }
 }

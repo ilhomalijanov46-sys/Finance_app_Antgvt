@@ -12,7 +12,7 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { AlertCircle } from 'lucide-react';
 import { formatDbError } from '../../utils/dbErrors';
-import { getCategoryColor } from '../../utils/formatters';
+import { getCategoryColor, normalizeDecimalInput } from '../../utils/formatters';
 
 const expenseCategories: ExpenseCategory[] = [
   'groceries',
@@ -34,10 +34,17 @@ const expenseCategories: ExpenseCategory[] = [
   'miscellaneous',
 ];
 
+// Matches the NUMERIC(14,2) column.
+const MAX_AMOUNT = 999_999_999_999.99;
+
 const buildSchema = (t: TFunction) =>
   z.object({
     category: z.string().min(1, { message: t('validation.categoryRequired') }),
-    limit_amount: z.coerce.number().positive({ message: t('validation.limitPositive') }),
+    limit_amount: z.coerce
+      .number()
+      .finite({ message: t('validation.limitPositive') })
+      .positive({ message: t('validation.limitPositive') })
+      .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') }),
     period: z.enum(['monthly', 'weekly', 'yearly']),
   });
 
@@ -58,7 +65,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   // Validation messages follow the interface language, so the schema is rebuilt
   // whenever the language changes.
   const schema = useMemo(() => buildSchema(t), [t]);
-  const { saveBudget } = useData();
+  const { saveBudget, budgets, customCategories } = useData();
   const { user } = useAuth();
 
   const {
@@ -81,6 +88,12 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Creating a budget for a (category, period) pair that already has one silently
+  // replaces it — createOrUpdate upserts on that pair. Editing is unaffected: its
+  // category is locked (see the Select below), so it can only ever match itself.
+  const collidesWithExisting =
+    !initialData && budgets.some((b) => b.category === selectedCategory && b.period === selectedPeriod);
+
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
     try {
@@ -97,11 +110,21 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
     }
   };
 
-  const categoryOptions = expenseCategories.map((cat) => ({
-    value: cat,
-    label: t(`expenses.categories.${cat}`),
-    color: getCategoryColor(cat),
-  }));
+  // Previously only the built-in categories could get a budget at all — a user's own
+  // expense category (created in the Categories manager) had no way into this list.
+  const userExpenseCategories = customCategories.filter((c) => c.type === 'expense');
+  const categoryOptions = [
+    ...expenseCategories.map((cat) => ({
+      value: cat,
+      label: t(`expenses.categories.${cat}`),
+      color: getCategoryColor(cat),
+    })),
+    ...userExpenseCategories.map((cat) => ({
+      value: cat.name,
+      label: cat.name,
+      color: cat.color || getCategoryColor(cat.name),
+    })),
+  ];
 
   // The period was in the schema but had no control, so every budget was silently saved
   // as monthly and the Budgets page measured all of them over the current month.
@@ -141,13 +164,24 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
         error={errors.period?.message}
       />
 
+      {collidesWithExisting && (
+        <p className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-start gap-1.5 -mt-1">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>{t('budgets.willReplaceExisting')}</span>
+        </p>
+      )}
+
       <Input
         label={t(`budgets.limitFor.${selectedPeriod}`)}
-        type="number"
-        step="any"
+        type="text"
+        inputMode="decimal"
         placeholder="0.00"
         error={errors.limit_amount?.message}
-        {...register('limit_amount')}
+        {...register('limit_amount', {
+          onChange: (e) => {
+            e.target.value = normalizeDecimalInput(e.target.value);
+          },
+        })}
       />
 
       <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
