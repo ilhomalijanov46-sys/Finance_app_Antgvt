@@ -22,22 +22,37 @@ ALTER TABLE public.budgets
 -- a hand-crafted API call (or a bug elsewhere in the app) could write a value none of
 -- the UI's switch statements handle, which then renders as nothing or crashes a page
 -- expecting one of a fixed set of strings.
+--
+-- DROP ... IF EXISTS before every ADD CONSTRAINT here: this project's actual remote
+-- schema was originally hand-run from an inline SQL script (since replaced — see
+-- DOCUMENTATION.md's history) rather than these migration files from a clean slate, and
+-- a plain unnamed `CHECK (...)` on a column creates a constraint under exactly this
+-- auto-generated `<table>_<column>_check` name — so some of these already exist under
+-- these names on tables that got their check constraint from that original script,
+-- while others (added to a column later, e.g. incomes.payment_method) do not.
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_currency_check;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_locale_check;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_theme_check;
 ALTER TABLE public.profiles
   ADD CONSTRAINT profiles_currency_check CHECK (currency IN ('USD', 'UZS', 'EUR', 'RUB')),
   ADD CONSTRAINT profiles_locale_check CHECK (locale IN ('ru', 'en', 'uz')),
   ADD CONSTRAINT profiles_theme_check CHECK (theme IN ('light', 'dark', 'system'));
 
+ALTER TABLE public.incomes DROP CONSTRAINT IF EXISTS incomes_payment_method_check;
 ALTER TABLE public.incomes
   ADD CONSTRAINT incomes_payment_method_check CHECK (payment_method IN ('card', 'cash', 'transfer'));
 
+ALTER TABLE public.expenses DROP CONSTRAINT IF EXISTS expenses_payment_method_check;
 ALTER TABLE public.expenses
   ADD CONSTRAINT expenses_payment_method_check CHECK (payment_method IN ('card', 'cash', 'transfer'));
 
+ALTER TABLE public.budgets DROP CONSTRAINT IF EXISTS budgets_period_check;
 ALTER TABLE public.budgets
   ADD CONSTRAINT budgets_period_check CHECK (period IN ('monthly', 'weekly', 'yearly'));
 
 -- A goal's progress cannot exceed its own target — the UI already clamps deposits at
 -- the target with LEAST(), but editing a goal's amount directly bypassed that.
+ALTER TABLE public.goals DROP CONSTRAINT IF EXISTS goals_current_within_target_check;
 ALTER TABLE public.goals
   ADD CONSTRAINT goals_current_within_target_check CHECK (current_amount <= target_amount);
 
