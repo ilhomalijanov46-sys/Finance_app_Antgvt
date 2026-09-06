@@ -364,7 +364,8 @@
     "security": "Безопасность",
     "changePasswordDesc": "Смена пароля для входа в аккаунт.",
     "changePasswordAction": "Изменить пароль",
-    "passwordChanged": "Пароль изменён"
+    "passwordChanged": "Пароль изменён",
+    "importNothingNew": "Все записи из файла уже есть в аккаунте — импортировать нечего"
   },
   "validation": {
     "amountPositive": "Сумма должна быть больше 0",

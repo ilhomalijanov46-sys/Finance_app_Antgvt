@@ -33,7 +33,7 @@ export const Profile: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { user, isDemoMode, signOut, updateUserPreferences, updatePassword } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { incomes, expenses, budgets, goals, refetchAll } = useData();
+  const { incomes, expenses, budgets, goals, customCategories, refetchAll } = useData();
 
   const [name, setName] = useState(user?.name || '');
   const [currency, setCurrency] = useState<CurrencyCode>(user?.currency || 'USD');
@@ -125,7 +125,7 @@ export const Profile: React.FC = () => {
   };
 
   const handleExportJSON = () => {
-    exportToJSON({ incomes, expenses, budgets, goals });
+    exportToJSON({ incomes, expenses, budgets, goals, customCategories });
   };
 
   const handleExportCSV = () => {
@@ -151,7 +151,7 @@ export const Profile: React.FC = () => {
 
         // Accept the file only if it actually looks like a backup, otherwise any JSON
         // would be imported as an empty dataset and wipe what is already stored.
-        const sections = ['incomes', 'expenses', 'budgets', 'goals'] as const;
+        const sections = ['incomes', 'expenses', 'budgets', 'goals', 'customCategories'] as const;
         const present = sections.filter((key) => Array.isArray(json?.[key]));
         if (present.length === 0) {
           setImportStatus({ ok: false, message: t('profile.importError') });
@@ -161,14 +161,18 @@ export const Profile: React.FC = () => {
         setIsBusy(true);
         setImportStatus({ ok: true, message: t('profile.importRunning') });
 
-        const { imported, total } = await dataService.importBackup(json, user?.id || '');
+        const { imported, total, skippedDuplicate } = await dataService.importBackup(json, user?.id || '');
         await refetchAll();
 
-        setImportStatus(
-          imported === total
-            ? { ok: true, message: t('profile.importSuccess') }
-            : { ok: false, message: t('profile.importPartial', { ok: imported, total }) }
-        );
+        if (imported === total) {
+          setImportStatus({ ok: true, message: t('profile.importSuccess') });
+        } else if (imported === 0 && skippedDuplicate === total) {
+          // Every row in the file already exists in the account — not a failure, just
+          // nothing new to add (re-importing the same backup twice, most commonly).
+          setImportStatus({ ok: true, message: t('profile.importNothingNew') });
+        } else {
+          setImportStatus({ ok: false, message: t('profile.importPartial', { ok: imported, total }) });
+        }
       } catch (err) {
         console.error('Import failed:', err);
         setImportStatus({ ok: false, message: formatDbError(err, 'profile.importError') });

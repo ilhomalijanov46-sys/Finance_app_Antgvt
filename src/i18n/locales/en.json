@@ -363,7 +363,8 @@
     "security": "Security",
     "changePasswordDesc": "Change the password you use to sign in.",
     "changePasswordAction": "Change password",
-    "passwordChanged": "Password changed"
+    "passwordChanged": "Password changed",
+    "importNothingNew": "Every record in the file already exists in this account — nothing to import"
   },
   "validation": {
     "amountPositive": "Amount must be greater than 0",

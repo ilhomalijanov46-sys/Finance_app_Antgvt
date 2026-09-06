@@ -363,7 +363,8 @@
     "security": "Xavfsizlik",
     "changePasswordDesc": "Hisobga kirish uchun parolni almashtirish.",
     "changePasswordAction": "Parolni almashtirish",
-    "passwordChanged": "Parol o'zgartirildi"
+    "passwordChanged": "Parol o'zgartirildi",
+    "importNothingNew": "Fayldagi barcha yozuvlar hisobda allaqachon mavjud — import qilinadigan narsa yo'q"
   },
   "validation": {
     "amountPositive": "Miqdor 0 dan katta bo'lishi kerak",
