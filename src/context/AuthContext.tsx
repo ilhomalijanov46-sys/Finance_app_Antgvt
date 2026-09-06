@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, LocaleCode } from '../types';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { localDemoStore } from '../services/mockData';
 import { profileService } from '../services/profileService';
@@ -255,7 +255,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInDemo = async () => {
     authGeneration.current++;
-    applyProfile(localDemoStore.getUser(), true);
+    const demoUser = localDemoStore.getUser();
+    // The demo account has no real per-user "saved preference" to restore — its
+    // locale is just a hardcoded default in mockData.ts. Blindly restoring it used to
+    // snap the interface back to Russian even when the visitor had just switched to
+    // another language on this same login screen a moment before clicking the demo
+    // button. Respect whatever language is already active instead.
+    const profile: UserProfile =
+      demoUser.locale === i18n.language ? demoUser : { ...demoUser, locale: i18n.language as LocaleCode };
+    if (profile !== demoUser) localDemoStore.setUser(profile);
+    applyProfile(profile, true);
   };
 
   const signOut = async () => {

@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { formatDate, toDateKey } from '../../utils/formatters';
+import { formatDate, formatDateLocalized, getMonthName, toDateKey } from '../../utils/formatters';
 import { LocaleCode } from '../../types';
 
 export interface DatePickerProps {
@@ -199,7 +199,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
         const d = new Date(year, m, 1);
         list.push({
           index: m,
-          name: d.toLocaleString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' }),
+          name: getMonthName(d, locale, 'short'),
         });
       }
       return list;
@@ -243,10 +243,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
       setViewMode('months');
     };
 
-    const monthTitle = viewDate.toLocaleString(
-      locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US',
-      { month: 'long', year: 'numeric' }
-    );
+    const monthTitle = formatDateLocalized(viewDate, locale, { month: 'long', year: 'numeric' });
 
     // A label-derived id collides whenever two pickers share a label, and a Cyrillic
     // label produced a non-ASCII id — same fix as Input/Select.

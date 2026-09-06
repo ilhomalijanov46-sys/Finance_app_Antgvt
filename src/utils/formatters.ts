@@ -1,5 +1,28 @@
 import { CurrencyCode, LocaleCode } from '../types';
 
+// Chromium's bundled ICU data has no real Uzbek month names — Intl.DateTimeFormat and
+// Date.prototype.toLocaleString both fall back to a generic "M09"-style token for
+// 'uz-UZ' month names/abbreviations instead of an actual name, in both a full and a
+// headless Chromium build (verified directly; Node's own ICU gets it right — "6-sen,
+// 2026" — so this is specifically a browser gap, not malformed input on our end). Every
+// place that needs an Uzbek month name uses this table instead of depending on the
+// browser's ICU completeness.
+const UZ_MONTHS_LONG = [
+  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr',
+];
+const UZ_MONTHS_SHORT = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+
+/** A month name/abbreviation that works regardless of the browser's ICU completeness
+ * for the given locale (see the note on UZ_MONTHS_LONG above). */
+export const getMonthName = (date: Date, locale: LocaleCode = 'ru', style: 'short' | 'long' = 'long'): string => {
+  if (locale === 'uz') {
+    return (style === 'short' ? UZ_MONTHS_SHORT : UZ_MONTHS_LONG)[date.getMonth()];
+  }
+  const jsLocale = locale === 'ru' ? 'ru-RU' : 'en-US';
+  return date.toLocaleString(jsLocale, { month: style });
+};
+
 export const formatCurrency = (
   amount: number,
   currency: CurrencyCode = 'USD',
@@ -56,6 +79,31 @@ export const toDateKey = (date: Date = new Date()): string => {
   return `${year}-${month}-${day}`;
 };
 
+/** Formats a Date directly (as opposed to formatDate below, which parses a YYYY-MM-DD
+ * string first) — shared by every month/year header in Calendar, DatePicker and
+ * PeriodSelector, so the Uzbek month-name patch lives in one place. */
+export const formatDateLocalized = (
+  date: Date,
+  locale: LocaleCode = 'ru',
+  options: Intl.DateTimeFormatOptions
+): string => {
+  const jsLocale = locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US';
+  const formatter = new Intl.DateTimeFormat(jsLocale, options);
+
+  if (locale === 'uz' && (options.month === 'long' || options.month === 'short')) {
+    // formatToParts keeps Intl's (correct) day/year formatting and ordering, patching in
+    // our own month name for just the one token Chromium's ICU gets wrong — see
+    // getMonthName's doc comment.
+    const style = options.month;
+    return formatter
+      .formatToParts(date)
+      .map((part) => (part.type === 'month' ? getMonthName(date, locale, style) : part.value))
+      .join('');
+  }
+
+  return formatter.format(date);
+};
+
 export const formatDate = (
   dateString: string,
   locale: LocaleCode = 'ru',
@@ -66,7 +114,6 @@ export const formatDate = (
   }
 ): string => {
   if (!dateString) return '';
-  const jsLocale = locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US';
   let date: Date;
   const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
   if (isoMatch) {
@@ -85,7 +132,8 @@ export const formatDate = (
     date = new Date(dateString);
   }
   if (isNaN(date.getTime())) return dateString;
-  return new Intl.DateTimeFormat(jsLocale, options).format(date);
+
+  return formatDateLocalized(date, locale, options);
 };
 
 // Amount inputs are type="text" with inputMode="decimal" rather than type="number"

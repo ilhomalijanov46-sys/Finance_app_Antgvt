@@ -5,7 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { LocaleCode } from '../../types';
-import { toDateKey } from '../../utils/formatters';
+import { toDateKey, getMonthName, formatDateLocalized } from '../../utils/formatters';
 
 
 export type PeriodType =
@@ -173,11 +173,11 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-').map(Number);
     const date = new Date(y, m - 1, d);
-    return new Intl.DateTimeFormat(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
+    return formatDateLocalized(date, locale, {
       day: 'numeric',
       month: 'short',
       year: y !== today.getFullYear() ? 'numeric' : undefined,
-    }).format(date);
+    });
   };
 
   // Label for trigger button
@@ -249,11 +249,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     setCurrentViewDate(new Date(viewYear, viewMonth + 1, 1));
   };
 
-  const monthTitle = useMemo(() => {
-    return new Intl.DateTimeFormat(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
-      month: 'long',
-    }).format(currentViewDate);
-  }, [currentViewDate, locale]);
+  const monthTitle = useMemo(() => getMonthName(currentViewDate, locale, 'long'), [currentViewDate, locale]);
 
   // Generate 42 days grid for viewMonth
   const calendarDays = useMemo(() => {

@@ -5,7 +5,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Dialog } from '../components/ui/Dialog';
-import { formatDate, toDateKey } from '../utils/formatters';
+import { formatDate, formatDateLocalized, getMonthName, toDateKey } from '../utils/formatters';
 import { LocaleCode } from '../types';
 import {
   ChevronLeft,
@@ -66,7 +66,7 @@ export const Calendar: React.FC = () => {
       const d = new Date(year, m, 1);
       list.push({
         index: m,
-        name: d.toLocaleString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', { month: 'long' }),
+        name: getMonthName(d, locale, 'long'),
       });
     }
     return list;
@@ -185,10 +185,7 @@ export const Calendar: React.FC = () => {
     };
   }, [selectedDayString, incomes, expenses]);
 
-  const monthTitle = currentDate.toLocaleString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const monthTitle = formatDateLocalized(currentDate, locale, { month: 'long', year: 'numeric' });
 
   const weekDayLabels = t('calendar.weekDays', { returnObjects: true }) as string[];
 
