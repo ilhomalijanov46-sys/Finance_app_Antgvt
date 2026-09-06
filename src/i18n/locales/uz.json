@@ -374,7 +374,9 @@
     "currentNonNegative": "Miqdor manfiy bo'lishi mumkin emas",
     "categoryRequired": "Kategoriyani tanlang",
     "limitPositive": "Limit 0 dan katta bo'lishi kerak",
-    "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak"
+    "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak",
+    "amountTooLarge": "Summa juda katta",
+    "categoryDuplicate": "Bunday toifa allaqachon mavjud"
   },
   "common": {
     "search": "Qidirish...",

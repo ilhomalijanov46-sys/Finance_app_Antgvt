@@ -375,7 +375,9 @@
     "currentNonNegative": "Сумма не может быть отрицательной",
     "categoryRequired": "Выберите категорию",
     "limitPositive": "Лимит должен быть больше 0",
-    "targetPositive": "Сумма цели должна быть больше 0"
+    "targetPositive": "Сумма цели должна быть больше 0",
+    "amountTooLarge": "Слишком большая сумма",
+    "categoryDuplicate": "Такая категория уже существует"
   },
   "common": {
     "search": "Поиск по названию или заметке...",

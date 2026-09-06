@@ -5,7 +5,7 @@ import * as z from 'zod';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Income, IncomeCategory, PaymentMethod } from '../../types';
-import { toDateKey } from '../../utils/formatters';
+import { toDateKey, normalizeDecimalInput } from '../../utils/formatters';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
@@ -27,9 +27,18 @@ const defaultIncomeCategories: IncomeCategory[] = [
   'other',
 ];
 
+// Matches the NUMERIC(14,2) column: Infinity used to pass `.positive()` outright, and
+// an amount near or past the column's own limit would otherwise reach the database
+// only to be rejected there with a raw Postgres overflow error.
+const MAX_AMOUNT = 999_999_999_999.99;
+
 const buildSchema = (t: TFunction) =>
   z.object({
-    amount: z.coerce.number().positive({ message: t('validation.amountPositive') }),
+    amount: z.coerce
+      .number()
+      .finite({ message: t('validation.amountPositive') })
+      .positive({ message: t('validation.amountPositive') })
+      .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') }),
     category: z.string().min(1, { message: t('validation.categoryRequired') }),
     payment_method: z.enum(['card', 'cash', 'transfer']),
     source: z.string().optional(),
@@ -88,15 +97,29 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
   const selectedDate = watch('date');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
-  const handleCreateCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCatName.trim()) return;
+  const handleCreateCategory = async () => {
+    const name = newCatName.trim();
+    if (!name || isCreatingCategory) return; // guards both the empty case and a double-click/double-Enter
+
+    // Case-insensitive: the database's own uniqueness check is case-sensitive, so
+    // "Такси" and "такси" would otherwise both get created and be indistinguishable
+    // everywhere they're displayed.
+    const isDuplicate = categoryOptions.some(
+      (opt) => opt.label.toLowerCase() === name.toLowerCase()
+    );
+    if (isDuplicate) {
+      setSubmitError(t('validation.categoryDuplicate'));
+      return;
+    }
+
+    setIsCreatingCategory(true);
     try {
       const created = await addCustomCategory({
-        name: newCatName.trim(),
+        name,
         type: 'income',
-        color: getCategoryColor(newCatName.trim()),
+        color: getCategoryColor(name),
       });
       setValue('category', created.name, { shouldValidate: true, shouldDirty: true });
       setNewCatName('');
@@ -106,11 +129,17 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
       // than leaving the input sitting there as if nothing happened.
       console.error('Failed to create category:', err);
       setSubmitError(formatDbError(err, 'categories.syncFailed'));
+    } finally {
+      setIsCreatingCategory(false);
     }
   };
 
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
+    // A new record with no time entered defaults to "now"; editing an existing record
+    // and deliberately clearing the time field means "no time on this" and must not be
+    // silently overwritten back to the current time.
+    const time = values.time || (initialData ? undefined : currentTime);
     try {
       if (initialData) {
         await updateIncome(initialData.id, {
@@ -119,7 +148,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
           payment_method: values.payment_method,
           source: values.source,
           date: values.date,
-          time: values.time || currentTime,
+          time,
           note: values.note,
         });
       } else {
@@ -130,7 +159,7 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
           payment_method: values.payment_method,
           source: values.source,
           date: values.date,
-          time: values.time || currentTime,
+          time,
           note: values.note,
         });
       }
@@ -174,11 +203,15 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
 
       <Input
         label={t('incomes.amount')}
-        type="number"
-        step="any"
+        type="text"
+        inputMode="decimal"
         placeholder="0.00"
         error={errors.amount?.message}
-        {...register('amount')}
+        {...register('amount', {
+          onChange: (e) => {
+            e.target.value = normalizeDecimalInput(e.target.value);
+          },
+        })}
       />
 
       <div className="space-y-1.5">
@@ -210,11 +243,28 @@ export const IncomeForm: React.FC<IncomeFormProps> = ({
               type="text"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter here used to submit the whole income form instead of creating
+                // the category, since this input sits inside that <form> too.
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCreateCategory();
+                }
+              }}
               placeholder={t('categories.ownPlaceholderIncome')}
+              aria-label={t('categories.ownPlaceholderIncome')}
               className="flex-1 bg-transparent text-xs text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400"
               autoFocus
+              disabled={isCreatingCategory}
             />
-            <Button size="sm" variant="primary" type="button" onClick={handleCreateCategory} className="text-xs h-7 px-2.5">
+            <Button
+              size="sm"
+              variant="primary"
+              type="button"
+              onClick={handleCreateCategory}
+              isLoading={isCreatingCategory}
+              className="text-xs h-7 px-2.5"
+            >
               {t('categories.add')}
             </Button>
           </div>

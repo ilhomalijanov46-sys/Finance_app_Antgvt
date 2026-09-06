@@ -374,7 +374,9 @@
     "currentNonNegative": "Amount cannot be negative",
     "categoryRequired": "Select a category",
     "limitPositive": "Limit must be greater than 0",
-    "targetPositive": "Goal amount must be greater than 0"
+    "targetPositive": "Goal amount must be greater than 0",
+    "amountTooLarge": "Amount is too large",
+    "categoryDuplicate": "This category already exists"
   },
   "common": {
     "search": "Search by keyword or memo...",

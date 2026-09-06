@@ -78,6 +78,13 @@ export const formatDate = (
   return new Intl.DateTimeFormat(jsLocale, options).format(date);
 };
 
+// Amount inputs are type="text" with inputMode="decimal" rather than type="number"
+// specifically so this can normalize a locale decimal comma ("1500,50") to a dot before
+// it reaches zod's z.coerce.number() — a native <input type="number"> either rejects
+// the comma keystroke outright or (per the HTML spec) reports .value as "" for a string
+// that doesn't parse as a number, silently turning the typed amount into 0.
+export const normalizeDecimalInput = (value: string): string => value.replace(',', '.');
+
 export const formatDateTime = (
   dateString: string,
   timeString?: string,
