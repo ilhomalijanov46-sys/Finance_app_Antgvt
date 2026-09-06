@@ -48,7 +48,7 @@
       "userAlreadyRegistered": "Bu email allaqachon ro'yxatdan o'tgan. Iltimos, tizimga kiring",
       "enterName": "Iltimos, ismingizni kiriting",
       "rateLimit": "Juda ko'p urinish. 1–2 daqiqa kutib, qaytadan urinib ko'ring",
-      "emailNotConfirmed": "Email hali tasdiqlanmagan. Pochtangizni tekshiring yoki Supabase sozlamalarida tasdiqlashni o'chiring",
+      "emailNotConfirmed": "Email hali tasdiqlanmagan. Pochtangizni tekshiring va xatdagi havolaga o'ting",
       "invalidEmail": "Iltimos, to'g'ri email manzilini kiriting",
       "network": "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring",
       "notConfigured": "Ma'lumotlar bazasi sozlanmagan",

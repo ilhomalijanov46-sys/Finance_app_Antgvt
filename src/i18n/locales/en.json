@@ -48,7 +48,7 @@
       "userAlreadyRegistered": "This email is already registered. Please sign in instead",
       "enterName": "Please enter your name",
       "rateLimit": "Too many attempts. Wait 1–2 minutes and try again",
-      "emailNotConfirmed": "Email is not confirmed yet. Check your inbox, or turn confirmation off in the Supabase settings",
+      "emailNotConfirmed": "Email is not confirmed yet. Check your inbox and follow the link in the confirmation email",
       "invalidEmail": "Please enter a valid email address",
       "network": "Could not reach the server. Check your internet connection",
       "notConfigured": "The database is not configured",

@@ -204,7 +204,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const summary = calculateSummary(incomes, expenses, budgets);
   summary.activeGoalsCount = goals.filter((g) => g.current_amount < g.target_amount).length;
 
-  const collections = [incomesQuery, expensesQuery, budgetsQuery, goalsQuery, categoriesQuery];
+  // custom_categories is deliberately excluded from the load-failure signal below: it's
+  // the one collection that can legitimately not exist yet (a project that hasn't run
+  // migration 003), and every page that isn't actually about categories works fine
+  // without it. Surfacing the same red "your data failed to load" banner for that as
+  // for incomes/expenses/budgets/goals actually failing alarmed the user over nothing
+  // while the account's real financial data was loading just fine.
+  const collections = [incomesQuery, expensesQuery, budgetsQuery, goalsQuery];
 
   const isLoading = collections.some((q) => q.isLoading);
 

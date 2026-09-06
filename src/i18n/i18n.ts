@@ -29,4 +29,12 @@ i18n
     },
   });
 
+// index.html hardcodes lang="ru" for the very first paint (before i18next has
+// detected anything), but the app supports en/uz too — a screen reader kept reading
+// English or Uzbek text with Russian phonetics for the rest of the session otherwise.
+// This fires once init resolves the detected language, and again on every switch.
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng;
+});
+
 export default i18n;

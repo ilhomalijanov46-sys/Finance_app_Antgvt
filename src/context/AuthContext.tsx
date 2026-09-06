@@ -35,6 +35,27 @@ const isAuthSessionError = (error: unknown): boolean => {
   return false;
 };
 
+/** A hung request (a stalled connection with no server-side timeout to end it) used to
+ * leave the app stuck on the full-screen loader forever — `finally { setIsLoading(false) }`
+ * only runs once the awaited promise actually settles. Racing it against a timer
+ * guarantees bootstrap always finishes one way or another. */
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timed out')), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+
+const PROFILE_FETCH_TIMEOUT_MS = 15_000;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   // isLoading is ONLY for initial application bootstrap / session check
@@ -79,7 +100,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const sessionUser = data?.session?.user;
           if (sessionUser) {
             try {
-              const profile = await profileService.getProfile(sessionUser.id, sessionUser);
+              const profile = await withTimeout(
+                profileService.getProfile(sessionUser.id, sessionUser),
+                PROFILE_FETCH_TIMEOUT_MS
+              );
               applyProfile(profile, false);
             } catch (profileErr) {
               // Session is valid but the profile fetch failed (network, timeout). Do

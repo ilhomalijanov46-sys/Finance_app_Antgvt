@@ -5,7 +5,9 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230071e3'><circle cx='12' cy='12' r='10' fill='%230071e3'/><text x='12' y='16' font-size='12' font-family='system-ui, -apple-system' font-weight='bold' text-anchor='middle' fill='white'>$</text></svg>" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- No maximum-scale/user-scalable=no: that blocked pinch-to-zoom outright, which
+       WCAG 1.4.4 requires be possible — a real barrier for anyone with low vision. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
     content="Personal Finance Tracker — An ultra-fast, aesthetically refined personal finance management application with Apple & macOS design aesthetics." />
   <meta name="theme-color" content="#0071e3" />
