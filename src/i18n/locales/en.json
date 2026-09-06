@@ -108,7 +108,8 @@
     "storyBudget": "You are within 100% of all planned category budgets.",
     "savedTotal": "Saved: {{value}}",
     "goalsTotal": "{{count}} goals in total",
-    "storyTopCategory": "{{category}} is your largest spending category: {{percent}}% of all expenses ({{value}})."
+    "storyTopCategory": "{{category}} is your largest spending category: {{percent}}% of all expenses ({{value}}).",
+    "overspentTotal": "Overspent: {{value}}"
   },
   "incomes": {
     "title": "Incomes",

@@ -108,7 +108,8 @@
     "storyBudget": "Вы укладываетесь в 100% запланированных категорий бюджета.",
     "savedTotal": "Накоплено: {{value}}",
     "goalsTotal": "Всего целей: {{count}}",
-    "storyTopCategory": "{{category}} — самая большая статья расходов: {{percent}}% от всех трат ({{value}})."
+    "storyTopCategory": "{{category}} — самая большая статья расходов: {{percent}}% от всех трат ({{value}}).",
+    "overspentTotal": "Перерасход: {{value}}"
   },
   "incomes": {
     "title": "Доходы",

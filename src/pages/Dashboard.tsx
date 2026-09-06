@@ -105,7 +105,17 @@ export const Dashboard: React.FC = () => {
     ...incomes.map((i) => ({ type: 'income' as const, data: i })),
     ...expenses.map((e) => ({ type: 'expense' as const, data: e })),
   ]
-    .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+    // Sorting by date alone left every entry from today (or any single day) in
+    // whatever order the two source arrays happened to concatenate in — an entry
+    // logged this morning could outrank one from five minutes ago. Time is missing
+    // on some rows (older data, imports); '00:00' is the safe default since it never
+    // outranks a row that does have a recorded time on the same day.
+    .sort((a, b) => {
+      if (a.data.date !== b.data.date) return b.data.date < a.data.date ? -1 : 1;
+      const aTime = a.data.time || '00:00';
+      const bTime = b.data.time || '00:00';
+      return bTime < aTime ? -1 : bTime > aTime ? 1 : 0;
+    })
     .slice(0, 6);
 
   return (
@@ -207,7 +217,13 @@ export const Dashboard: React.FC = () => {
           suffix="%"
           icon={<Percent className="w-4 h-4" />}
           highlightColor="#3b82f6"
-          subtitle={t('dashboard.savedTotal', { value: format(Math.max(0, summary.netBalance)) })}
+          // Overspending must be visible, not clamped to 0 and mislabeled as savings —
+          // the whole point of this card is to warn the user when it happens.
+          subtitle={
+            summary.netBalance >= 0
+              ? t('dashboard.savedTotal', { value: format(summary.netBalance) })
+              : t('dashboard.overspentTotal', { value: format(Math.abs(summary.netBalance)) })
+          }
         />
         <StatCard
           title={t('dashboard.activeGoals')}

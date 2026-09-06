@@ -1,4 +1,5 @@
 import { Income, Expense, Budget, FinancialSummary, CategorySummary, MonthlyTrend, LocaleCode } from '../types';
+import { toDateKey } from './formatters';
 
 export const calculateSummary = (
   incomes: Income[],
@@ -8,7 +9,10 @@ export const calculateSummary = (
   const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const netBalance = totalIncome - totalExpense;
-  const savingsRate = totalIncome > 0 ? Math.max(0, Math.min(100, ((totalIncome - totalExpense) / totalIncome) * 100)) : 0;
+  // Overspending must show as a negative rate, not disappear: clamping the floor to 0
+  // made a month where expenses exceeded income look identical to a month with exactly
+  // zero savings — the one number meant to warn the user about exactly this hid it.
+  const savingsRate = totalIncome > 0 ? Math.min(100, ((totalIncome - totalExpense) / totalIncome) * 100) : 0;
 
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.limit_amount || 0), 0);
   const budgetUsagePercent = totalBudget > 0 ? (totalExpense / totalBudget) * 100 : 0;
@@ -95,7 +99,10 @@ export const getMonthlyTrends = (
       month: label,
       income: monthIncomes,
       expense: monthExpenses,
-      savings: Math.max(0, monthIncomes - monthExpenses),
+      // Not clamped to 0: a month that overspent should be able to show it as negative
+      // savings wherever this field ends up rendered, consistent with calculateSummary's
+      // savingsRate.
+      savings: monthIncomes - monthExpenses,
     });
   }
 
@@ -181,4 +188,82 @@ export const getBudgetPeriodRange = (
   );
 
   return { start: key(startDate), end: key(endDate), daysTotal, daysLeft };
+};
+
+/** The transaction-list period filter used on Statistics/Expenses/Incomes. Kept as a
+ * loose string union rather than importing PeriodSelector's PeriodType, to avoid a
+ * utils -> component import; the two are kept in sync by hand. */
+export type TransactionPeriod =
+  | 'all'
+  | 'today'
+  | 'yesterday'
+  | '7days'
+  | '30days'
+  | '90days'
+  | 'this_month'
+  | 'custom';
+
+/**
+ * Inclusive [start, end] day-key range for a transaction-list period filter, or `null`
+ * for "no filter" (all-time, or a custom range not yet fully picked). "N days" means
+ * exactly N calendar days including today — so "7 days" subtracts 6, not 7, from
+ * today's date. The previous `- 7` off-by-one made every "N days" filter (and the
+ * per-day averages computed from it) actually cover N+1 days.
+ */
+export const getPeriodRange = (
+  period: TransactionPeriod,
+  customRange?: { startDate?: string; endDate?: string },
+  now: Date = new Date()
+): { start: string; end: string } | null => {
+  const today = toDateKey(now);
+  const back = (days: number) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - days);
+    return toDateKey(d);
+  };
+
+  switch (period) {
+    case 'today':
+      return { start: today, end: today };
+    case 'yesterday': {
+      const key = back(1);
+      return { start: key, end: key };
+    }
+    case '7days':
+      return { start: back(6), end: today };
+    case '30days':
+      return { start: back(29), end: today };
+    case '90days':
+      return { start: back(89), end: today };
+    case 'this_month': {
+      const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      return { start, end: today };
+    }
+    case 'custom':
+      return customRange?.startDate && customRange?.endDate
+        ? { start: customRange.startDate, end: customRange.endDate }
+        : null;
+    case 'all':
+    default:
+      return null;
+  }
+};
+
+/** Filters items with a `date` field down to a period range from getPeriodRange(),
+ * comparing the YYYY-MM-DD strings directly — safe because zero-padded ISO dates sort
+ * lexicographically in calendar order. `range === null` returns the list unfiltered. */
+export const filterByPeriod = <T extends { date: string }>(
+  items: T[],
+  range: { start: string; end: string } | null
+): T[] => (range ? items.filter((item) => item.date >= range.start && item.date <= range.end) : items);
+
+/** The number of calendar days a period range actually spans — the denominator for a
+ * correct "average per day", matched to what filterByPeriod above just selected. */
+export const countDaysInRange = (range: { start: string; end: string }): number => {
+  const [sy, sm, sd] = range.start.split('-').map(Number);
+  const [ey, em, ed] = range.end.split('-').map(Number);
+  const start = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.max(1, Math.round((end.getTime() - start.getTime()) / msPerDay) + 1);
 };

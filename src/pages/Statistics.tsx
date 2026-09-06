@@ -5,8 +5,8 @@ import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/common/StatCard';
 import { PeriodSelector, PeriodType, DateRange } from '../components/ui/PeriodSelector';
-import { getExpensesByCategory, getMonthlyTrends } from '../utils/analytics';
-import { getCategoryColor, formatAxisValue, toDateKey } from '../utils/formatters';
+import { getExpensesByCategory, getMonthlyTrends, getPeriodRange, filterByPeriod } from '../utils/analytics';
+import { getCategoryColor, formatAxisValue } from '../utils/formatters';
 import { LocaleCode } from '../types';
 import {
   BarChart,
@@ -37,54 +37,14 @@ export const Statistics: React.FC = () => {
 
   // Filter transactions based on selected period
   const filteredData = useMemo(() => {
-    const today = toDateKey();
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = toDateKey(yesterdayDate);
-
-    const sevenDaysAgoDate = new Date();
-    sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = toDateKey(sevenDaysAgoDate);
-
-    const thirtyDaysAgoDate = new Date();
-    thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-    const thirtyDaysAgo = toDateKey(thirtyDaysAgoDate);
-
-    const ninetyDaysAgoDate = new Date();
-    ninetyDaysAgoDate.setDate(ninetyDaysAgoDate.getDate() - 90);
-    const ninetyDaysAgo = toDateKey(ninetyDaysAgoDate);
-
-    const currentMonthStr = today.substring(0, 7);
-
-    let incs = incomes;
-    let exps = expenses;
-
-    if (period === 'today') {
-      incs = incomes.filter((i) => i.date === today);
-      exps = expenses.filter((e) => e.date === today);
-    } else if (period === 'yesterday') {
-      incs = incomes.filter((i) => i.date === yesterday);
-      exps = expenses.filter((e) => e.date === yesterday);
-    } else if (period === '7days') {
-      incs = incomes.filter((i) => i.date >= sevenDaysAgo && i.date <= today);
-      exps = expenses.filter((e) => e.date >= sevenDaysAgo && e.date <= today);
-    } else if (period === '30days') {
-      incs = incomes.filter((i) => i.date >= thirtyDaysAgo && i.date <= today);
-      exps = expenses.filter((e) => e.date >= thirtyDaysAgo && e.date <= today);
-    } else if (period === '90days') {
-      incs = incomes.filter((i) => i.date >= ninetyDaysAgo && i.date <= today);
-      exps = expenses.filter((e) => e.date >= ninetyDaysAgo && e.date <= today);
-    } else if (period === 'this_month') {
-      incs = incomes.filter((i) => i.date.startsWith(currentMonthStr));
-      exps = expenses.filter((e) => e.date.startsWith(currentMonthStr));
-    } else if (period === 'custom' && customRange?.startDate && customRange?.endDate) {
-      incs = incs.filter((i) => i.date >= customRange.startDate && i.date <= customRange.endDate);
-      exps = exps.filter((e) => e.date >= customRange.startDate && e.date <= customRange.endDate);
-    }
+    const range = getPeriodRange(period, customRange);
+    const incs = filterByPeriod(incomes, range);
+    const exps = filterByPeriod(expenses, range);
 
     const totalIncome = incs.reduce((s, i) => s + Number(i.amount || 0), 0);
     const totalExpense = exps.reduce((s, e) => s + Number(e.amount || 0), 0);
-    const savings = Math.max(0, totalIncome - totalExpense);
+    // Not clamped to 0: overspending must show as negative, not disappear as zero.
+    const savings = totalIncome - totalExpense;
     const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
     const categoryBreakdown = getExpensesByCategory(exps);
 

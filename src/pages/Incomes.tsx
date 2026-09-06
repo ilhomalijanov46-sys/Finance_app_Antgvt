@@ -13,7 +13,8 @@ import { StatCard } from '../components/common/StatCard';
 import { exportToCSV } from '../utils/exportImport';
 import { Income, IncomeCategory } from '../types';
 import { CategoryManagerModal } from '../components/modals/CategoryManagerModal';
-import { getCategoryColor, toDateKey } from '../utils/formatters';
+import { getCategoryColor } from '../utils/formatters';
+import { getPeriodRange } from '../utils/analytics';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp,
@@ -55,55 +56,23 @@ export const Incomes: React.FC = () => {
   const [editingIncome, setEditingIncome] = useState<Income | null>(null);
   const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
 
-  // Filter incomes
+  // Filter incomes. Date range math lives in one shared place
+  // (utils/analytics.getPeriodRange) instead of being duplicated — and previously
+  // drifting out of sync — across this page, Expenses and Statistics.
+  const periodRange = useMemo(() => getPeriodRange(period, customRange), [period, customRange]);
+
   const filteredIncomes = useMemo(() => {
-    const today = toDateKey();
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = toDateKey(yesterdayDate);
-
-    const sevenDaysAgoDate = new Date();
-    sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = toDateKey(sevenDaysAgoDate);
-
-    const thirtyDaysAgoDate = new Date();
-    thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-    const thirtyDaysAgo = toDateKey(thirtyDaysAgoDate);
-
-    const ninetyDaysAgoDate = new Date();
-    ninetyDaysAgoDate.setDate(ninetyDaysAgoDate.getDate() - 90);
-    const ninetyDaysAgo = toDateKey(ninetyDaysAgoDate);
-
-    const currentYearMonth = today.substring(0, 7);
-
     return incomes.filter((item) => {
-      // 1. Category
       const matchesCategory =
         selectedCategory === 'all' || item.category === selectedCategory;
 
-      // 2. Method
       const matchesMethod =
         selectedMethod === 'all' || (item.payment_method || 'card') === selectedMethod;
 
-      // 3. Date
-      let matchesDate = true;
-      if (period === 'today') {
-        matchesDate = item.date === today;
-      } else if (period === 'yesterday') {
-        matchesDate = item.date === yesterday;
-      } else if (period === '7days') {
-        matchesDate = item.date >= sevenDaysAgo && item.date <= today;
-      } else if (period === '30days') {
-        matchesDate = item.date >= thirtyDaysAgo && item.date <= today;
-      } else if (period === '90days') {
-        matchesDate = item.date >= ninetyDaysAgo && item.date <= today;
-      } else if (period === 'this_month') {
-        matchesDate = item.date.startsWith(currentYearMonth);
-      } else if (period === 'custom' && customRange?.startDate && customRange?.endDate) {
-        matchesDate = item.date >= customRange.startDate && item.date <= customRange.endDate;
-      }
+      const matchesDate = periodRange
+        ? item.date >= periodRange.start && item.date <= periodRange.end
+        : true;
 
-      // 4. Search
       const categoryName = t(`incomes.categories.${item.category}`, { defaultValue: item.category });
       const matchesSearch =
         searchQuery === '' ||
@@ -113,7 +82,7 @@ export const Incomes: React.FC = () => {
 
       return matchesCategory && matchesMethod && matchesDate && matchesSearch;
     });
-  }, [incomes, selectedCategory, selectedMethod, period, customRange, searchQuery, t]);
+  }, [incomes, selectedCategory, selectedMethod, periodRange, searchQuery, t]);
 
   const totalAmount = filteredIncomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const avgAmount = filteredIncomes.length > 0 ? totalAmount / filteredIncomes.length : 0;

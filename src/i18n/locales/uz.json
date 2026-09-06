@@ -108,7 +108,8 @@
     "storyBudget": "Barcha rejalashtirilgan byudjet chegaralariga to'liq amal qilyapsiz.",
     "savedTotal": "Jamg‘arilgan: {{value}}",
     "goalsTotal": "Jami {{count}} ta maqsad",
-    "storyTopCategory": "{{category}} — eng katta xarajat toifasi: barcha xarajatlarning {{percent}}% ({{value}})."
+    "storyTopCategory": "{{category}} — eng katta xarajat toifasi: barcha xarajatlarning {{percent}}% ({{value}}).",
+    "overspentTotal": "Ortiqcha sarflandi: {{value}}"
   },
   "incomes": {
     "title": "Daromadlar",
