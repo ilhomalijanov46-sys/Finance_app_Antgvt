@@ -233,7 +233,8 @@
       "monthly": "Oylik limit",
       "yearly": "Yillik limit"
     },
-    "totalLimit": "Umumiy limit"
+    "totalLimit": "Umumiy limit",
+    "willReplaceExisting": "Bu toifa va davr uchun byudjet allaqachon mavjud — u yangi limit bilan almashtiriladi"
   },
   "goals": {
     "title": "Moliyaviy maqsadlar",
@@ -264,7 +265,9 @@
     "completedCount": "Bajarilgan maqsadlar",
     "errors": {
       "invalidAmount": "Musbat summani kiriting"
-    }
+    },
+    "currentAmountLocked": "\"Mablag' qo'shish\" tugmasi orqali o'zgartiriladi",
+    "deadlineInPast": "Bu sana allaqachon o'tib ketgan"
   },
   "calendar": {
     "title": "Moliyaviy taqvim",
@@ -376,7 +379,8 @@
     "limitPositive": "Limit 0 dan katta bo'lishi kerak",
     "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak",
     "amountTooLarge": "Summa juda katta",
-    "categoryDuplicate": "Bunday toifa allaqachon mavjud"
+    "categoryDuplicate": "Bunday toifa allaqachon mavjud",
+    "currentExceedsTarget": "Joriy summa maqsaddan oshib ketmasligi kerak"
   },
   "common": {
     "search": "Qidirish...",

@@ -92,7 +92,7 @@ export const Goals: React.FC = () => {
 
   // Compare whole local days, not timestamps: `new Date('2026-08-28')` is midnight UTC,
   // which is still "yesterday" for anyone east of Greenwich.
-  const getDaysLeft = (deadline?: string) => {
+  const getDaysLeft = (deadline?: string | null) => {
     if (!deadline) return null;
     const [y, m, d] = deadline.split('-').map(Number);
     if (!y || !m || !d) return null;

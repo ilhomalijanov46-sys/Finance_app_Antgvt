@@ -233,7 +233,8 @@
       "monthly": "Monthly limit",
       "yearly": "Yearly limit"
     },
-    "totalLimit": "Total limit"
+    "totalLimit": "Total limit",
+    "willReplaceExisting": "A budget for this category and period already exists — it will be replaced with the new limit"
   },
   "goals": {
     "title": "Financial Goals",
@@ -264,7 +265,9 @@
     "completedCount": "Goals completed",
     "errors": {
       "invalidAmount": "Enter a positive amount"
-    }
+    },
+    "currentAmountLocked": "Changed via the \"Deposit\" button",
+    "deadlineInPast": "This date is already in the past"
   },
   "calendar": {
     "title": "Cash Flow Calendar",
@@ -376,7 +379,8 @@
     "limitPositive": "Limit must be greater than 0",
     "targetPositive": "Goal amount must be greater than 0",
     "amountTooLarge": "Amount is too large",
-    "categoryDuplicate": "This category already exists"
+    "categoryDuplicate": "This category already exists",
+    "currentExceedsTarget": "Current amount cannot exceed the target"
   },
   "common": {
     "search": "Search by keyword or memo...",

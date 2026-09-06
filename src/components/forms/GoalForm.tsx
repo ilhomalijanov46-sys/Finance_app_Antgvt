@@ -12,6 +12,7 @@ import { DatePicker } from '../ui/DatePicker';
 import { Button } from '../ui/Button';
 import { AlertCircle } from 'lucide-react';
 import { formatDbError } from '../../utils/dbErrors';
+import { toDateKey, normalizeDecimalInput } from '../../utils/formatters';
 
 const colorOptions = [
   '#0071e3', // Apple Blue
@@ -23,14 +24,35 @@ const colorOptions = [
   '#f43f5e', // Rose
 ];
 
+// Matches the NUMERIC(14,2) columns.
+const MAX_AMOUNT = 999_999_999_999.99;
+
 const buildSchema = (t: TFunction) =>
-  z.object({
-    title: z.string().min(2, { message: t('validation.titleMin') }),
-    target_amount: z.coerce.number().positive({ message: t('validation.targetPositive') }),
-    current_amount: z.coerce.number().min(0, { message: t('validation.currentNonNegative') }),
-    deadline: z.string().optional(),
-    color: z.string().default('#0071e3'),
-  });
+  z
+    .object({
+      title: z
+        .string()
+        .trim()
+        .min(2, { message: t('validation.titleMin') }),
+      target_amount: z.coerce
+        .number()
+        .finite({ message: t('validation.targetPositive') })
+        .positive({ message: t('validation.targetPositive') })
+        .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') }),
+      current_amount: z.coerce
+        .number()
+        .finite({ message: t('validation.currentNonNegative') })
+        .min(0, { message: t('validation.currentNonNegative') }),
+      deadline: z.string().optional(),
+      color: z.string().default('#0071e3'),
+    })
+    // A goal's progress cannot exceed its own target — reachable through this form
+    // even though the deposit flow itself clamps at the target, since editing
+    // current_amount directly bypasses that clamp.
+    .refine((data) => data.current_amount <= data.target_amount, {
+      message: t('validation.currentExceedsTarget'),
+      path: ['current_amount'],
+    });
 
 type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
@@ -77,12 +99,16 @@ export const GoalForm: React.FC<GoalFormProps> = ({
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
     try {
+      // An explicit null (not undefined) when the field is cleared: a PATCH body drops
+      // undefined keys entirely, so the deadline column would otherwise never actually
+      // be cleared once set.
+      const deadline = values.deadline ? values.deadline : null;
       if (initialData) {
         await updateGoal(initialData.id, {
           title: values.title,
           target_amount: values.target_amount,
           current_amount: values.current_amount,
-          deadline: values.deadline || undefined,
+          deadline,
           color: values.color,
         });
       } else {
@@ -91,7 +117,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({
           title: values.title,
           target_amount: values.target_amount,
           current_amount: values.current_amount,
-          deadline: values.deadline || undefined,
+          deadline,
           color: values.color,
         });
       }
@@ -121,29 +147,53 @@ export const GoalForm: React.FC<GoalFormProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
           label={t('goals.targetAmount')}
-          type="number"
-          step="any"
+          type="text"
+          inputMode="decimal"
           placeholder="0.00"
           error={errors.target_amount?.message}
-          {...register('target_amount')}
+          {...register('target_amount', {
+            onChange: (e) => {
+              e.target.value = normalizeDecimalInput(e.target.value);
+            },
+          })}
         />
 
+        {/* Editing an existing goal's progress here would change the balance with no
+            expense to show where the money went — unlike the "Deposit" flow, which
+            records one. Only a brand-new goal (a starting point, not a movement of
+            money) may set this directly. */}
         <Input
           label={t('goals.currentAmount')}
-          type="number"
-          step="any"
+          type="text"
+          inputMode="decimal"
           placeholder="0.00"
           error={errors.current_amount?.message}
-          {...register('current_amount')}
+          disabled={Boolean(initialData)}
+          helperText={initialData ? t('goals.currentAmountLocked') : undefined}
+          {...register('current_amount', {
+            onChange: (e) => {
+              e.target.value = normalizeDecimalInput(e.target.value);
+            },
+          })}
         />
       </div>
 
-      <DatePicker
-        label={t('goals.deadline')}
-        value={deadlineValue}
-        onChange={(e) => setValue('deadline', e.target.value, { shouldValidate: true, shouldDirty: true })}
-        error={errors.deadline?.message}
-      />
+      <div className="space-y-1">
+        <DatePicker
+          label={t('goals.deadline')}
+          value={deadlineValue}
+          onChange={(e) => setValue('deadline', e.target.value, { shouldValidate: true, shouldDirty: true })}
+          error={errors.deadline?.message}
+        />
+        {/* A past deadline is allowed (recording a goal that's already overdue is a
+            legitimate use), but silently accepting it with no acknowledgement at all
+            reads as the date picker having ignored the input. */}
+        {!errors.deadline && deadlineValue && deadlineValue < toDateKey() && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 ml-0.5">
+            {t('goals.deadlineInPast')}
+          </p>
+        )}
+      </div>
 
       <div className="space-y-1.5">
         <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 ml-0.5 tracking-tight">
