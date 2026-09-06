@@ -424,7 +424,8 @@
     "selectRange": "Select Date Range",
     "apply": "Apply",
     "close": "Close",
-    "rangeTooLong": "Range is longer than {{days}} days. Pick a shorter one"
+    "rangeTooLong": "Range is longer than {{days}} days. Pick a shorter one",
+    "pickDateFirst": "Pick a date first"
   },
   "categories": {
     "title": "Manage Categories",

@@ -424,7 +424,8 @@
     "selectRange": "Davrni tanlang",
     "apply": "Qo'llash",
     "close": "Yopish",
-    "rangeTooLong": "{{days}} kundan uzoq davr tanlandi. Qisqaroq oraliq tanlang"
+    "rangeTooLong": "{{days}} kundan uzoq davr tanlandi. Qisqaroq oraliq tanlang",
+    "pickDateFirst": "Avval sanani tanlang"
   },
   "categories": {
     "title": "Kategoriyalarni boshqarish",
