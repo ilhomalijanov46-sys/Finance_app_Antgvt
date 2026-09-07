@@ -1,24 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { X, Share, SquarePlus, Sparkles } from 'lucide-react';
+import { X, Share, SquarePlus, MoreVertical, Download, Sparkles } from 'lucide-react';
 import { AppLogo } from './AppLogo';
 import { Button } from '../ui/Button';
 import {
   APP_VERSION,
-  isIOS,
+  BeforeInstallPromptEvent,
+  clearDeferredPrompt,
+  detectPlatform,
+  getDeferredPrompt,
   isStandaloneDisplay,
   isUpdatePrompt,
+  onDeferredPrompt,
   readDismissedVersion,
   rememberDismissed,
   shouldOfferInstall,
 } from '../../utils/installPrompt';
-
-/** Chrome's install event, which the DOM lib still does not type. */
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
 
 // Long enough that the card arrives after the page has settled, short enough that it is
 // clearly a response to opening the app rather than a random interruption.
@@ -27,23 +25,24 @@ const APPEAR_DELAY_MS = 1500;
 /**
  * Offers to put the app on the home screen when it is being viewed in a browser tab.
  *
- * The platforms differ in what is even possible:
- *  - Chrome (Android, desktop) fires `beforeinstallprompt`, which can be saved and
- *    replayed on a tap — that opens the browser's own install dialog, so one tap really
- *    does install it.
- *  - iOS has no such API and never has: Safari only adds a shortcut through its own share
- *    sheet. Nothing a page does can trigger it, so the card shows the three steps instead
- *    of pretending a button can do it.
- * Anywhere else (Firefox, desktop Safari) nothing useful can happen, so nothing is shown.
+ * What is actually possible differs per platform, and the card says only what is true for
+ * the one it is on:
+ *  - Chrome (Android, desktop) fires `beforeinstallprompt`; replaying it on a tap opens
+ *    the browser's own install dialog, so one tap really does install the app.
+ *  - iOS has no install API in *any* browser — Apple requires them all to use WebKit, so
+ *    Chrome and Firefox on an iPhone are as unable to do it as Safari. All they can do is
+ *    point at the share sheet, which sits in a different place in each of them.
+ *  - Android Chrome that never fired the event (already installed, or criteria not met)
+ *    falls back to the menu instructions.
  */
 export const InstallPrompt: React.FC = () => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(getDeferredPrompt);
   const [isUpdate, setIsUpdate] = useState(false);
 
-  const ios = isIOS();
+  const platform = useMemo(() => detectPlatform({ canPrompt: Boolean(installEvent) }), [installEvent]);
 
   const dismiss = useCallback(() => {
     rememberDismissed(APP_VERSION);
@@ -65,50 +64,65 @@ export const InstallPrompt: React.FC = () => {
 
     setIsUpdate(isUpdatePrompt(readDismissedVersion(), APP_VERSION));
 
-    const onBeforeInstall = (e: Event) => {
-      // Suppressing Chrome's own mini-infobar is what earns the right to replay it later.
-      e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
-      if (offerNow()) setVisible(true);
-    };
-    // Added from the home screen while the tab is still open, or installed in Chrome.
-    const onInstalled = () => dismiss();
+    // The event may have arrived before this component existed — that is the whole point
+    // of capturing it at module level.
+    if (getDeferredPrompt()) {
+      setInstallEvent(getDeferredPrompt());
+      setVisible(true);
+    }
 
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    const unsubscribe = onDeferredPrompt((event) => {
+      setInstallEvent(event);
+      if (offerNow()) setVisible(true);
+    });
+
+    const onInstalled = () => dismiss();
     window.addEventListener('appinstalled', onInstalled);
 
-    // iOS never fires the event, so the card is shown on a timer instead.
-    const timer = ios
-      ? window.setTimeout(() => {
-          if (offerNow()) setVisible(true);
-        }, APPEAR_DELAY_MS)
-      : undefined;
+    // Nothing will fire on a phone browser that cannot install: show the manual steps.
+    const manual = detectPlatform({ canPrompt: false });
+    const timer =
+      manual === 'ios-safari' || manual === 'ios-other' || manual === 'android'
+        ? window.setTimeout(() => {
+            if (offerNow()) setVisible(true);
+          }, APPEAR_DELAY_MS)
+        : undefined;
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      unsubscribe();
       window.removeEventListener('appinstalled', onInstalled);
       if (timer) window.clearTimeout(timer);
     };
-  }, [ios, dismiss]);
+  }, [dismiss]);
 
   const handleAdd = async () => {
     if (installEvent) {
       await installEvent.prompt();
       const { outcome } = await installEvent.userChoice;
+      clearDeferredPrompt();
       setInstallEvent(null);
       // "dismissed" means they closed the browser's dialog: don't nag again on this build.
       if (outcome === 'accepted' || outcome === 'dismissed') dismiss();
       return;
     }
-    // iOS: all this button can honestly do is show where the share sheet is.
+    // Everywhere else all this button can honestly do is show where the share sheet is.
     setShowSteps(true);
   };
 
-  const steps = [
-    { icon: <Share className="w-4 h-4" />, text: t('install.iosStep1') },
-    { icon: <SquarePlus className="w-4 h-4" />, text: t('install.iosStep2') },
-    { icon: <Sparkles className="w-4 h-4" />, text: t('install.iosStep3') },
-  ];
+  const steps: Array<{ icon: React.ReactNode; text: string }> =
+    platform === 'android'
+      ? [
+          { icon: <MoreVertical className="w-4 h-4" />, text: t('install.androidStep1') },
+          { icon: <Download className="w-4 h-4" />, text: t('install.androidStep2') },
+        ]
+      : [
+          {
+            icon: <Share className="w-4 h-4" />,
+            text: platform === 'ios-other' ? t('install.iosOtherStep1') : t('install.iosStep1'),
+          },
+          { icon: <SquarePlus className="w-4 h-4" />, text: t('install.iosStep2') },
+          { icon: <Sparkles className="w-4 h-4" />, text: t('install.iosStep3') },
+        ];
 
   return (
     <AnimatePresence>

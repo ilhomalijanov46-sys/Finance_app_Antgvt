@@ -499,6 +499,9 @@
     "later": "Keyinroq",
     "iosStep1": "Ekran pastidagi «Share» tugmasini bosing",
     "iosStep2": "«Add to Home Screen» ni tanlang",
-    "iosStep3": "«Add» ni bosing — tayyor"
+    "iosStep3": "«Add» ni bosing — tayyor",
+    "iosOtherStep1": "Manzil yonidagi «Share» tugmasini bosing",
+    "androidStep1": "Brauzerdagi ⋮ menyusini oching",
+    "androidStep2": "«Ilovani oʻrnatish» ni tanlang"
   }
 }

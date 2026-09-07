@@ -499,6 +499,9 @@
     "later": "Later",
     "iosStep1": "Tap Share at the bottom of the screen",
     "iosStep2": "Choose \"Add to Home Screen\"",
-    "iosStep3": "Tap \"Add\" — done"
+    "iosStep3": "Tap \"Add\" — done",
+    "iosOtherStep1": "Tap Share next to the address bar",
+    "androidStep1": "Open the ⋮ menu in the browser",
+    "androidStep2": "Choose \"Install app\""
   }
 }
