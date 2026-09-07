@@ -488,5 +488,17 @@
     "crashTitle": "Nimadir xato ketdi",
     "crashDescription": "Sahifani qayta yuklab ko'ring. Agar takrorlansa, bizga xabar bering.",
     "reload": "Qayta yuklash"
+  },
+  "install": {
+    "title": "Uni «Asosiy ekran»ga qoʻshing",
+    "description": "Oddiy ilova kabi ochiladi — manzil satri va brauzer paneli koʻrinmaydi.",
+    "updatedTitle": "Ilova yangilandi",
+    "updatedDescription": "Yangi belgi va soʻnggi versiya uchun yorliqni qayta qoʻshing.",
+    "add": "Oʻrnatish",
+    "howTo": "Qanday qoʻshiladi",
+    "later": "Keyinroq",
+    "iosStep1": "Ekran pastidagi «Share» tugmasini bosing",
+    "iosStep2": "«Add to Home Screen» ni tanlang",
+    "iosStep3": "«Add» ni bosing — tayyor"
   }
 }

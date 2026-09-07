@@ -8,6 +8,7 @@ import { DataProvider } from './context/DataContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { PageLoader } from './components/common/PageLoader';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { InstallPrompt } from './components/common/InstallPrompt';
 
 // Every route is a separate chunk, so the first paint no longer has to download the
 // charting and form code of pages the user may never open.
@@ -142,6 +143,7 @@ export const App: React.FC = () => {
                 <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
+              <InstallPrompt />
             </BrowserRouter>
           </DataProvider>
         </ThemeProvider>

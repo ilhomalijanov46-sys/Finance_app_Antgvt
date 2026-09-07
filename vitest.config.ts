@@ -14,8 +14,17 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  define: {
+    // Tests import the same modules the app does; without this the version constant
+    // injected at build time would be an undefined global.
+    __APP_VERSION__: JSON.stringify('test'),
+  },
   test: {
     environment: 'node',
+    // jsdom refuses localStorage on an opaque origin, so the DOM tests need a real one.
+    environmentOptions: {
+      jsdom: { url: 'http://localhost:3000' },
+    },
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 });

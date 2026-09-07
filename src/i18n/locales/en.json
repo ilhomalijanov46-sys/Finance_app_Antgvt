@@ -488,5 +488,17 @@
     "crashTitle": "Something went wrong",
     "crashDescription": "Try reloading the page. If this keeps happening, let us know.",
     "reload": "Reload"
+  },
+  "install": {
+    "title": "Add to your home screen",
+    "description": "It opens like a normal app — no address bar, no browser toolbar.",
+    "updatedTitle": "The app has been updated",
+    "updatedDescription": "Add the shortcut again to pick up the new icon and the latest version.",
+    "add": "Install",
+    "howTo": "How to add",
+    "later": "Later",
+    "iosStep1": "Tap Share at the bottom of the screen",
+    "iosStep2": "Choose \"Add to Home Screen\"",
+    "iosStep3": "Tap \"Add\" — done"
   }
 }

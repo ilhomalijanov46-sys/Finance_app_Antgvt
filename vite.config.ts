@@ -1,9 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { execSync } from 'child_process';
+
+// The build's identity, used to decide whether to offer adding the app to the home screen
+// again: iOS freezes the icon and the standalone flag at the moment the shortcut is
+// created, so a shortcut made from an older build keeps the older icon forever. Vercel
+// exposes the commit as an env var; a local build falls back to git, then to the date.
+const appVersion =
+  process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+  (() => {
+    try {
+      return execSync('git rev-parse --short HEAD').toString().trim();
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  })();
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [react()],
   resolve: {
     alias: {
