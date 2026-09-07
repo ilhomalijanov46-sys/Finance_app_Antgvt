@@ -66,7 +66,7 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 relative selection:bg-blue-500/20">
+    <div className="min-h-dvh w-full flex flex-col items-center justify-center p-4 bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 relative selection:bg-blue-500/20">
       <div className="absolute top-6 right-6 flex items-center gap-2">
         <LanguageSwitcher />
         <ThemeToggle />

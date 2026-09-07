@@ -29,7 +29,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className }) => 
       onClick={cycleTheme}
       title={`${t('profile.theme')}: ${t(`profile.themes.${theme}`)}`}
       aria-label={`${t('profile.theme')}: ${t(`profile.themes.${theme}`)}`}
-      className={`relative inline-flex items-center justify-center p-2 rounded-xl text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-200/60 dark:hover:bg-zinc-800/80 backdrop-blur-md transition-colors ${className}`}
+      className={`relative inline-flex items-center justify-center w-10 h-10 sm:w-9 sm:h-9 rounded-xl text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-200/60 dark:hover:bg-zinc-800/80 backdrop-blur-md transition-colors ${className}`}
     >
       {theme === 'light' && <Sun className="w-4 h-4 text-amber-500" />}
       {theme === 'dark' && <Moon className="w-4 h-4 text-blue-400" />}

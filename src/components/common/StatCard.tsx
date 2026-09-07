@@ -38,11 +38,11 @@ export const StatCard: React.FC<StatCardProps> = ({
       className={cn('relative flex flex-col justify-between overflow-hidden', className)}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 tracking-tight uppercase">
+        <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-zinc-400 tracking-tight uppercase leading-tight">
           {title}
         </span>
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0"
           style={
             highlightColor
               ? {
@@ -59,7 +59,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       </div>
 
       <div className="mt-3">
-        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-100">
+        <div className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-100 break-words">
           <AnimatedCounter
             value={value}
             isCurrency={isCurrency}
@@ -68,7 +68,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
 
         {(subtitle || trend) && (
-          <div className="mt-2 flex items-center gap-2 text-xs">
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
             {trend && (
               // The arrow follows the direction the number actually moved; the colour
               // follows whether that movement is good news, which is the opposite for

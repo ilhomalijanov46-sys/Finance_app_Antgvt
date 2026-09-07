@@ -35,7 +35,7 @@ export const Tabs: React.FC<TabsProps> = ({
     <div
       role="tablist"
       className={cn(
-        'inline-flex items-center rounded-xl p-1 bg-slate-200/60 dark:bg-zinc-800/80 backdrop-blur-md border border-slate-300/30 dark:border-zinc-700/50',
+        'inline-flex max-w-full items-center overflow-x-auto no-scrollbar rounded-xl p-1 bg-slate-200/60 dark:bg-zinc-800/80 backdrop-blur-md border border-slate-300/30 dark:border-zinc-700/50',
         className
       )}
     >
@@ -49,7 +49,7 @@ export const Tabs: React.FC<TabsProps> = ({
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'relative flex items-center justify-center gap-1.5 font-medium transition-colors z-10',
+              'relative flex shrink-0 items-center justify-center gap-1.5 font-medium transition-colors z-10 min-h-[36px]',
               size === 'sm' ? 'px-3 py-1 text-xs rounded-lg' : 'px-4 py-1.5 text-sm rounded-lg',
               isActive
                 ? 'text-slate-900 dark:text-zinc-100 font-semibold'

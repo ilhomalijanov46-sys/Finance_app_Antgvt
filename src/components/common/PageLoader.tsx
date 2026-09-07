@@ -19,7 +19,7 @@ export const PageLoader: React.FC<PageLoaderProps> = ({ fullscreen = false, show
       aria-label={t('app.loading')}
       className={
         fullscreen
-          ? 'h-screen w-screen flex flex-col items-center justify-center bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100'
+          ? 'h-dvh w-screen flex flex-col items-center justify-center bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100'
           : 'flex flex-col items-center justify-center py-24 text-slate-900 dark:text-zinc-100'
       }
     >

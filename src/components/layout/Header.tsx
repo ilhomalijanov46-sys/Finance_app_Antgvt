@@ -40,6 +40,28 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, isMobileMenuOp
 
         {/* Right Actions: Quick Add, Language, Theme */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Adding a transaction is what people open this app to do, and the labelled
+              row below does not fit a phone — on a narrow screen it becomes two icons
+              rather than disappearing, which used to leave no way in from the header. */}
+          <div className="flex sm:hidden items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveModal('income')}
+              aria-label={t('dashboard.addIncome')}
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:bg-emerald-500/20 transition-colors"
+            >
+              <ArrowDownLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveModal('expense')}
+              aria-label={t('dashboard.addExpense')}
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 active:bg-rose-500/20 transition-colors"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Quick Actions Dropdown / Direct Buttons */}
           <div className="hidden sm:flex items-center gap-2">
             <Button

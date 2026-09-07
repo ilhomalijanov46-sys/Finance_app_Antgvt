@@ -216,7 +216,7 @@ export const Calendar: React.FC = () => {
             value={month}
             aria-label={t('calendar.selectMonth')}
             onChange={(e) => setSpecificMonth(Number(e.target.value))}
-            className="h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm capitalize"
+            className="h-10 sm:h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm capitalize"
           >
             {monthsList.map((m) => (
               <option key={m.index} value={m.index} className="capitalize dark:bg-zinc-900">
@@ -230,7 +230,7 @@ export const Calendar: React.FC = () => {
             value={year}
             aria-label={t('calendar.selectYear')}
             onChange={(e) => setSpecificYear(Number(e.target.value))}
-            className="h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm"
+            className="h-10 sm:h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm"
           >
             {yearsList.map((y) => (
               <option key={y} value={y} className="dark:bg-zinc-900">
@@ -250,7 +250,7 @@ export const Calendar: React.FC = () => {
               type="button"
               title={t('calendar.prevYear')}
               onClick={prevYear}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+              className="p-2.5 sm:p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
               <ChevronsLeft className="w-4 h-4" />
             </button>
@@ -258,7 +258,7 @@ export const Calendar: React.FC = () => {
               type="button"
               title={t('calendar.prevMonth')}
               onClick={prevPeriod}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+              className="p-2.5 sm:p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -266,7 +266,7 @@ export const Calendar: React.FC = () => {
               type="button"
               title={t('calendar.nextMonth')}
               onClick={nextPeriod}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+              className="p-2.5 sm:p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -274,7 +274,7 @@ export const Calendar: React.FC = () => {
               type="button"
               title={t('calendar.nextYear')}
               onClick={nextYear}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+              className="p-2.5 sm:p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
             >
               <ChevronsRight className="w-4 h-4" />
             </button>
@@ -315,7 +315,7 @@ export const Calendar: React.FC = () => {
                     setSelectedDayString(cell.dateStr);
                   }
                 }}
-                className={`min-h-[90px] sm:min-h-[105px] p-2 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
+                className={`min-h-[64px] sm:min-h-[105px] p-1.5 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
                   cell.isCurrentMonth
                     ? 'bg-white/90 dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800/60'
                     : 'bg-slate-50/40 dark:bg-zinc-950/40 opacity-40 hover:opacity-75 hover:bg-slate-100/50 dark:hover:bg-zinc-800/40'

@@ -102,7 +102,7 @@ export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className }
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-200/60 dark:hover:bg-zinc-800/80 backdrop-blur-md border border-slate-200/60 dark:border-zinc-800/80 transition-colors shadow-apple-sm"
+        className="inline-flex items-center gap-1.5 px-2.5 min-h-[40px] sm:min-h-[36px] rounded-xl text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-200/60 dark:hover:bg-zinc-800/80 backdrop-blur-md border border-slate-200/60 dark:border-zinc-800/80 transition-colors shadow-apple-sm"
       >
         <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
         <currentLang.Flag className="w-4 h-3 rounded-[2px]" />

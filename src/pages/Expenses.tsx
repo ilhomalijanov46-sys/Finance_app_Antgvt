@@ -187,7 +187,7 @@ export const Expenses: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           title={t('expenses.total')}
           value={totalAmount}
@@ -246,8 +246,8 @@ export const Expenses: React.FC = () => {
         </div>
 
         {/* 4 Clean Filter Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="col-span-2 lg:col-span-1">
             <Input
               placeholder={t('common.search')}
               leftIcon={<Search className="w-4 h-4" />}
@@ -269,7 +269,7 @@ export const Expenses: React.FC = () => {
               options={methodFilterOptions}
             />
           </div>
-          <div>
+          <div className="col-span-2 lg:col-span-1">
             <PeriodSelector
               value={period}
               customRange={customRange}

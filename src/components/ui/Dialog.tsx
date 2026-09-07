@@ -184,7 +184,7 @@ export const Dialog: React.FC<DialogProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            className="absolute inset-0 flex items-start sm:items-center justify-center p-3 pb-safe sm:p-6 overflow-y-auto"
           >
             {/* Backdrop */}
             <div
@@ -206,7 +206,7 @@ export const Dialog: React.FC<DialogProps> = ({
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
               className={cn(
-                'relative w-full z-10 my-8 rounded-3xl',
+                'relative w-full z-10 my-4 sm:my-8 rounded-3xl',
                 'backdrop-blur-2xl bg-white/95 dark:bg-zinc-900/95',
                 'border border-slate-200/80 dark:border-zinc-800/85',
                 'shadow-2xl text-slate-900 dark:text-zinc-100',

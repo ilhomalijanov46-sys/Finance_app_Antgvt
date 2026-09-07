@@ -227,11 +227,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         {...register('note')}
       />
 
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+        <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto">
           {t('common.cancel')}
         </Button>
-        <Button type="submit" variant="primary" isLoading={isSubmitting}>
+        <Button type="submit" variant="primary" isLoading={isSubmitting} className="w-full sm:w-auto">
           {t('common.save')}
         </Button>
       </div>

@@ -167,3 +167,22 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* A row of tabs/chips that has to stay on one line on a narrow screen: it scrolls, but
+   the scrollbar itself would eat into the touch target and look like a stray line. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Phone chrome (the iOS home indicator, the Android gesture bar) overlaps the bottom of
+   a full-height layout — `viewport-fit=cover` in index.html is what makes these non-zero. */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}

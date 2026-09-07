@@ -187,7 +187,7 @@ export const Dashboard: React.FC = () => {
       </Card>
 
       {/* 2. KPI Summary Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title={t('dashboard.monthlyIncome')}
           value={monthSummary.totalIncome}
@@ -365,7 +365,7 @@ export const Dashboard: React.FC = () => {
             </h3>
             <Link
               to="/expenses"
-              className="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium flex items-center gap-0.5"
+              className="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium flex items-center gap-0.5 -mr-2 px-2 py-2 rounded-lg"
             >
               <span>{t('dashboard.viewAll')}</span>
               <ChevronRight className="w-3 h-3" />

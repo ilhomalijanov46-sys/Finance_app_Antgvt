@@ -164,10 +164,10 @@ export const EntityCard: React.FC<EntityCardProps> = ({
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                className="p-2.5 sm:p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                 title={t('common.edit')}
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Edit2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
               </button>
             )}
             {onDelete && (
@@ -177,10 +177,10 @@ export const EntityCard: React.FC<EntityCardProps> = ({
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                className="p-2.5 sm:p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                 title={t('common.delete')}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
               </button>
             )}
           </div>

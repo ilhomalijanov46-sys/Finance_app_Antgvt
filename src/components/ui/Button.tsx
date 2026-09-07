@@ -42,10 +42,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes = {
-      sm: 'text-xs px-3 py-1.5 gap-1.5 rounded-lg',
-      md: 'text-sm px-4 py-2 gap-2',
-      lg: 'text-base px-5 py-2.5 gap-2.5 rounded-2xl',
-      icon: 'p-2 rounded-xl h-9 w-9',
+      // min-h keeps every button at a real touch target on a phone (a 28px-tall button
+      // is a miss half the time) without changing how they look on a desktop, where the
+      // padding already puts them at or above these heights.
+      sm: 'text-xs px-3 py-1.5 gap-1.5 rounded-lg min-h-[36px]',
+      md: 'text-sm px-4 py-2 gap-2 min-h-[40px]',
+      lg: 'text-base px-5 py-2.5 gap-2.5 rounded-2xl min-h-[48px]',
+      icon: 'p-2 rounded-xl h-10 w-10 sm:h-9 sm:w-9',
     };
 
     return (
