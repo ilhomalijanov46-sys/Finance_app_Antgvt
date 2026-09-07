@@ -3,14 +3,28 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230071e3'><circle cx='12' cy='12' r='10' fill='%230071e3'/><text x='12' y='16' font-size='12' font-family='system-ui, -apple-system' font-weight='bold' text-anchor='middle' fill='white'>$</text></svg>" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <!-- iOS ignores the manifest's icons for "Add to Home Screen" and uses this one; it is
+       opaque on purpose, because iOS renders transparency in a home-screen icon as black. -->
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <!-- No maximum-scale/user-scalable=no: that blocked pinch-to-zoom outright, which
        WCAG 1.4.4 requires be possible — a real barrier for anyone with low vision. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description"
     content="Personal Finance Tracker — An ultra-fast, aesthetically refined personal finance management application with Apple & macOS design aesthetics." />
-  <meta name="theme-color" content="#0071e3" />
+  <!-- Launched from the home screen the app runs standalone: no address bar, no Safari
+       toolbar. `apple-mobile-web-app-capable` is what iOS actually reads; the manifest's
+       "display": "standalone" covers Android and desktop Chrome. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Finance" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <!-- Per-scheme so the status bar and browser chrome follow the app's own theme instead
+       of being blue in a black interface. -->
+  <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
