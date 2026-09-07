@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, isMobileMenuOp
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full min-h-16 pt-safe backdrop-blur-xl bg-white/75 dark:bg-zinc-950/75 border-b border-slate-200/80 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between transition-colors">
+      <header className="sticky top-0 z-30 w-full min-h-16 pt-safe transform-gpu backdrop-blur-xl bg-white/75 dark:bg-zinc-950/75 border-b border-slate-200/80 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between transition-colors">
         {/* Left Mobile Menu Toggle & Title */}
         <div className="flex items-center gap-3">
           <button

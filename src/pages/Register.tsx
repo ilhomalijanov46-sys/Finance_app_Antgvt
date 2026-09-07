@@ -7,7 +7,8 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ThemeToggle } from '../components/layout/ThemeToggle';
 import { LanguageSwitcher } from '../components/layout/LanguageSwitcher';
-import { Sparkles, ShieldCheck, AlertCircle, MailCheck } from 'lucide-react';
+import { ShieldCheck, AlertCircle, MailCheck } from 'lucide-react';
+import { AppLogo } from '../components/common/AppLogo';
 import { motion } from 'framer-motion';
 import { formatAuthError } from '../utils/authErrors';
 
@@ -79,9 +80,7 @@ export const Register: React.FC = () => {
         className="w-full max-w-md space-y-6"
       >
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto shadow-apple-md shadow-blue-500/25">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
+          <AppLogo size={56} className="w-14 h-14 mx-auto shadow-apple-md shadow-blue-500/25 rounded-[15px]" />
           <h1 className="text-2xl font-bold tracking-tight">{t('auth.title')}</h1>
           <p className="text-xs text-slate-500 dark:text-zinc-400">{t('auth.subtitle')}</p>
         </div>

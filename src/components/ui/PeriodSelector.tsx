@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { useScrollLock } from '../../hooks/useScrollLock';
 import { LocaleCode } from '../../types';
 import { toDateKey, getMonthName, formatDateLocalized } from '../../utils/formatters';
 
@@ -107,13 +108,12 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   // accessibility machinery Dialog already provides: focus moved inside on open, a Tab
   // trap so focus can't wander onto the page behind it, the page not scrolling behind
   // it, and focus returned to whatever opened it on close.
+  useScrollLock(isRangeModalOpen);
+
   useEffect(() => {
     if (!isRangeModalOpen) return;
 
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-
     const focusables = () =>
       Array.from(
         rangeModalRef.current?.querySelectorAll<HTMLElement>(
@@ -150,7 +150,6 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
     return () => {
       window.clearTimeout(focusTimer);
       document.removeEventListener('keydown', handleTab, true);
-      document.body.style.overflow = overflow;
       previouslyFocusedRef.current?.focus?.();
     };
   }, [isRangeModalOpen]);

@@ -24,6 +24,15 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* iOS hands a flick that runs past the end of a scroll area to the page behind it. The
+     page cannot scroll (the app is a fixed shell with one inner scroller), so the rubber
+     band swallowed the gesture instead: the finger kept moving and nothing happened until
+     it was lifted and put down again. This is the "scroll sometimes freezes" report. */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
   .dark * {
     border-color: rgba(39, 39, 42, 0.8);
   }
@@ -185,4 +194,34 @@
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top);
+}
+
+/* The app's single scroll area. The momentum flag is a no-op on current iOS but still
+   matters on older WebViews, and promoting the blurred sticky header to its own layer
+   stops the repaint stalls that read as "the page stopped scrolling". */
+main {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Launched from the home screen there is no browser chrome to collapse, so the shell is
+   pinned outright. A fixed shell cannot be dragged at all, which — together with the
+   overscroll rules above — is what actually stops iOS from eating a swipe. In a normal
+   browser tab the shell keeps its `h-dvh` behaviour so the address bar can still hide. */
+@media (display-mode: standalone) {
+  .app-shell {
+    position: fixed;
+    inset: 0;
+  }
+}
+
+/* A strip that scrolls sideways (the tab rows) should only claim horizontal gestures — a
+   vertical swipe that happens to start on it belongs to the page. */
+.no-scrollbar {
+  touch-action: pan-x;
+}
+
+/* Lists inside popovers (hours, minutes, category pickers): reaching their end must not
+   scroll the page underneath them. */
+.custom-scrollbar {
+  overscroll-behavior: contain;
 }

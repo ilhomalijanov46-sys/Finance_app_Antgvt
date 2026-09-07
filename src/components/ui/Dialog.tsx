@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export interface DialogProps {
   isOpen: boolean;
@@ -87,21 +88,18 @@ export const Dialog: React.FC<DialogProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // While a modal is open the page behind it must not scroll, and focus must not be able
-  // to wander onto the controls underneath — both were possible before.
+  // Page scrolling is locked by a shared, counted hook — see useScrollLock for why it
+  // cannot be done per-component. Focus must also not be able to wander onto the controls
+  // underneath, which the trap below handles.
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
 
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-
-    const { overflow, paddingRight } = document.body.style;
-    // Compensating for the scrollbar keeps the page from shifting sideways as it locks.
-    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.overflow = 'hidden';
-    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
 
     const focusables = () =>
       Array.from(
@@ -142,8 +140,6 @@ export const Dialog: React.FC<DialogProps> = ({
     return () => {
       window.clearTimeout(firstFocus);
       document.removeEventListener('keydown', handleTab, true);
-      document.body.style.overflow = overflow;
-      document.body.style.paddingRight = paddingRight;
       previouslyFocused.current?.focus?.();
     };
   }, [isOpen]);
@@ -184,7 +180,7 @@ export const Dialog: React.FC<DialogProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 flex items-start sm:items-center justify-center p-3 pb-safe sm:p-6 overflow-y-auto"
+            className="absolute inset-0 flex items-start sm:items-center justify-center p-3 pb-safe sm:p-6 overflow-y-auto overscroll-contain"
           >
             {/* Backdrop */}
             <div

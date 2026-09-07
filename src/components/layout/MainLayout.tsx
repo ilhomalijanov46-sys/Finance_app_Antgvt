@@ -19,7 +19,7 @@ export const MainLayout: React.FC = () => {
   const dataUnavailable = Boolean(loadError) || isPaused;
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 font-sans transition-colors duration-200">
+    <div className="app-shell flex h-dvh w-full overflow-hidden bg-[#fbfbfd] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 font-sans transition-colors duration-200">
       {/* Desktop Sidebar */}
       <div className="hidden md:block h-full shrink-0">
         <Sidebar />
@@ -56,7 +56,7 @@ export const MainLayout: React.FC = () => {
           isMobileMenuOpen={isMobileMenuOpen}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 pb-safe sm:p-6 lg:p-8 scroll-smooth">
+        <main className="flex-1 overflow-y-auto overscroll-y-contain p-4 pb-safe sm:p-6 lg:p-8 scroll-smooth">
           <div className="max-w-7xl mx-auto space-y-6">
             {dataUnavailable && (
               <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex flex-col sm:flex-row sm:items-center gap-3">
