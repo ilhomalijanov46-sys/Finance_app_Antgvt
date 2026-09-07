@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
+import { fetchAllPages } from './pagination';
 import { Expense } from '../types';
 
 export const expenseService = {
@@ -14,20 +15,15 @@ export const expenseService = {
       return localDemoStore.getExpenses();
     }
 
-    const { data, error } = await supabase!
-      .from('expenses')
-      .select('*')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .order('time', { ascending: false, nullsFirst: false });
-
-    if (error) {
-      // Rethrow: a failed read must reach the UI as an error, not as "no records".
-      console.error('Failed to fetch expenses from Supabase:', error);
-      throw error;
-    }
-
-    return (data as Expense[]) || [];
+    return fetchAllPages<Expense>('expenses', (from, to) =>
+      supabase!
+        .from('expenses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .order('time', { ascending: false, nullsFirst: false })
+        .range(from, to)
+    );
   },
 
   create: async (expense: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> => {
@@ -81,6 +77,36 @@ export const expenseService = {
     const result = updated.find((item) => item.id === id);
     if (!result) throw new Error('Expense not found');
     return result;
+  },
+
+  /**
+   * Moves every row of one category to another in a single statement. The category-delete
+   * path used to do this as one update per row: a well-used category meant hundreds of
+   * parallel requests, and a failure half-way through left the history partly rewritten
+   * with the category itself still in place.
+   */
+  reassignCategory: async (userId: string, from: string, to: string): Promise<void> => {
+    if (!isDemoContext()) {
+      const { error } = await supabase!
+        .from('expenses')
+        .update({ category: to })
+        .eq('user_id', userId)
+        .eq('category', from);
+
+      if (error) {
+        console.error('Failed to reassign expense category in Supabase:', error);
+        throw error;
+      }
+      return;
+    }
+
+    // Demo mode
+    const current = localDemoStore.getExpenses();
+    assertWritten(
+      localDemoStore.setExpenses(
+        current.map((item) => (item.category === from ? { ...item, category: to } : item))
+      )
+    );
   },
 
   delete: async (id: string): Promise<void> => {

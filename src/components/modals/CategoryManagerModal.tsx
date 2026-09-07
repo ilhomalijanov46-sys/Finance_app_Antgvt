@@ -74,7 +74,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
   defaultType = 'expense',
 }) => {
   const { t } = useTranslation();
-  const { customCategories, addCustomCategory, deleteCustomCategory, incomes, expenses } = useData();
+  const { customCategories, addCustomCategory, deleteCustomCategory, incomes, expenses, budgets } = useData();
 
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>(defaultType);
   const [newCatName, setNewCatName] = useState('');
@@ -153,6 +153,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
     }
     return expenses.filter((e) => e.category === catName).length;
   };
+
+  // Budgets exist for expense categories only, and deleting the category now deletes them
+  // too (see DataContext.deleteCustomCategory) — so say so before the user confirms,
+  // rather than letting a limit disappear unannounced.
+  const getBudgetCount = (catName: string) =>
+    activeTab === 'expense' ? budgets.filter((b) => b.category === catName).length : 0;
 
   return (
     <Dialog
@@ -295,6 +301,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
               <div className="space-y-2">
                 {currentCustomCats.map((cat) => {
                   const count = getUsageCount(cat.name);
+                  const budgetCount = getBudgetCount(cat.name);
                   const isConfirmingDelete = deletingCatId === cat.id;
 
                   return (
@@ -334,6 +341,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                             {count > 0
                               ? t('categories.deleteConfirmWithOps', { n: count })
                               : t('categories.deleteConfirm')}
+                            {budgetCount > 0 && ` ${t('categories.deleteWithBudgets', { n: budgetCount })}`}
                           </span>
                           <button
                             type="button"

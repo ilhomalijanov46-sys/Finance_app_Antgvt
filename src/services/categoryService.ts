@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
+import { fetchAllPages } from './pagination';
 import { CustomCategory } from '../types';
 
 /**
@@ -14,18 +15,14 @@ export const categoryService = {
       return localDemoStore.getCategories();
     }
 
-    const { data, error } = await supabase!
-      .from('custom_categories')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Failed to fetch custom categories from Supabase:', error);
-      throw error;
-    }
-
-    return (data as CustomCategory[]) || [];
+    return fetchAllPages<CustomCategory>('custom_categories', (from, to) =>
+      supabase!
+        .from('custom_categories')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    );
   },
 
   create: async (category: Omit<CustomCategory, 'id' | 'created_at'>): Promise<CustomCategory> => {

@@ -342,7 +342,7 @@ export const dataService = {
    */
   resetAll: async (userId: string): Promise<void> => {
     if (isDemoContext()) {
-      assertWritten(localDemoStore.resetToDefaults());
+      assertWritten(await localDemoStore.resetToDefaults());
       return;
     }
 

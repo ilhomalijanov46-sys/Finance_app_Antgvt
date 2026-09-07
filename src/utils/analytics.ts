@@ -1,10 +1,18 @@
 import { Income, Expense, Budget, FinancialSummary, CategorySummary, MonthlyTrend, LocaleCode } from '../types';
 import { toDateKey, getMonthName } from './formatters';
 
+/**
+ * `budgets` is still accepted (and ignored) so the many call sites keep compiling: the
+ * summary used to carry a budgetUsagePercent that divided *lifetime* expenses by the sum
+ * of every limit regardless of its period — weekly, monthly and yearly added together —
+ * a number that could only grow and meant nothing. Per-budget usage is computed properly
+ * on the Budgets page, which measures each budget over its own period.
+ */
 export const calculateSummary = (
   incomes: Income[],
   expenses: Expense[],
-  budgets: Budget[] = []
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _budgets: Budget[] = []
 ): FinancialSummary => {
   const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -14,16 +22,12 @@ export const calculateSummary = (
   // zero savings — the one number meant to warn the user about exactly this hid it.
   const savingsRate = totalIncome > 0 ? Math.min(100, ((totalIncome - totalExpense) / totalIncome) * 100) : 0;
 
-  const totalBudget = budgets.reduce((sum, b) => sum + Number(b.limit_amount || 0), 0);
-  const budgetUsagePercent = totalBudget > 0 ? (totalExpense / totalBudget) * 100 : 0;
-
   return {
     totalIncome,
     totalExpense,
     netBalance,
     savingsRate,
     activeGoalsCount: 0,
-    budgetUsagePercent,
   };
 };
 

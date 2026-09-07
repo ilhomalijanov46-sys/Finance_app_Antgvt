@@ -369,7 +369,8 @@
     "changePasswordDesc": "Change the password you use to sign in.",
     "changePasswordAction": "Change password",
     "passwordChanged": "Password changed",
-    "importNothingNew": "Every record in the file already exists in this account — nothing to import"
+    "importNothingNew": "Every record in the file already exists in this account — nothing to import",
+    "importTooLarge": "File is too large (max {{mb}} MB)"
   },
   "validation": {
     "amountPositive": "Amount must be greater than 0",
@@ -453,7 +454,8 @@
     "sectionDesc": "Create your own categories or remove the ones you do not need",
     "short": "Categories",
     "syncFailed": "Could not save the category. Please try again",
-    "deleteConfirmWithOps": "Delete? ({{n}} → Other)"
+    "deleteConfirmWithOps": "Delete? ({{n}} → Other)",
+    "deleteWithBudgets": "+ budgets: {{n}}"
   },
   "datePicker": {
     "placeholder": "dd.mm.yyyy",
@@ -481,5 +483,10 @@
     "hours": "Hours",
     "minutes": "Minutes",
     "now": "Now"
+  },
+  "errors": {
+    "crashTitle": "Something went wrong",
+    "crashDescription": "Try reloading the page. If this keeps happening, let us know.",
+    "reload": "Reload"
   }
 }

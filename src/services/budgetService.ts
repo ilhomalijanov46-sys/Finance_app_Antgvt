@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
+import { fetchAllPages } from './pagination';
 import { Budget } from '../types';
 
 export const budgetService = {
@@ -9,21 +10,16 @@ export const budgetService = {
       return localDemoStore.getBudgets();
     }
 
-    const { data, error } = await supabase!
-      .from('budgets')
-      .select('*')
-      .eq('user_id', userId)
-      // Without an explicit order Postgres makes no promise about row order, so the
-      // budget cards used to reshuffle themselves on every reload.
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      // Rethrow: a failed read must reach the UI as an error, not as "no records".
-      console.error('Failed to fetch budgets from Supabase:', error);
-      throw error;
-    }
-
-    return (data as Budget[]) || [];
+    return fetchAllPages<Budget>('budgets', (from, to) =>
+      supabase!
+        .from('budgets')
+        .select('*')
+        .eq('user_id', userId)
+        // Without an explicit order Postgres makes no promise about row order, so the
+        // budget cards used to reshuffle themselves on every reload.
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    );
   },
 
   createOrUpdate: async (budget: Omit<Budget, 'id' | 'created_at'>): Promise<Budget> => {

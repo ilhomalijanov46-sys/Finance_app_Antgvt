@@ -40,6 +40,14 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// Stable identities for "this collection has not loaded yet". A fresh `[]` per render
+// would change the memoized context value on every render for no reason.
+const NO_INCOMES: Income[] = [];
+const NO_EXPENSES: Expense[] = [];
+const NO_BUDGETS: Budget[] = [];
+const NO_GOALS: Goal[] = [];
+const NO_CATEGORIES: CustomCategory[] = [];
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -96,11 +104,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     enabled,
   });
 
-  const customCategories = categoriesQuery.data ?? [];
-  const incomes = incomesQuery.data ?? [];
-  const expenses = expensesQuery.data ?? [];
-  const budgets = budgetsQuery.data ?? [];
-  const goals = goalsQuery.data ?? [];
+  const customCategories = categoriesQuery.data ?? NO_CATEGORIES;
+  const incomes = incomesQuery.data ?? NO_INCOMES;
+  const expenses = expensesQuery.data ?? NO_EXPENSES;
+  const budgets = budgetsQuery.data ?? NO_BUDGETS;
+  const goals = goalsQuery.data ?? NO_GOALS;
 
   // Mutations
   const addIncomeMutation = useMutation({
@@ -197,11 +205,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cat = customCategories.find((c) => c.id === id);
       if (cat) {
         if (cat.type === 'income') {
-          const affected = incomes.filter((i) => i.category === cat.name);
-          await Promise.all(affected.map((i) => incomeService.update(i.id, { category: 'other' })));
+          await incomeService.reassignCategory(userId, cat.name, 'other');
         } else {
-          const affected = expenses.filter((e) => e.category === cat.name);
-          await Promise.all(affected.map((e) => expenseService.update(e.id, { category: 'miscellaneous' })));
+          await expenseService.reassignCategory(userId, cat.name, 'miscellaneous');
+
+          // A budget is keyed to its category by the same plain name, and nothing used to
+          // touch it here. Once the category was gone its name disappeared from every
+          // picker, so no expense could ever be booked against that budget again: it sat
+          // on the Budgets page reporting 0 spent of its full limit forever and inflated
+          // the total-limit KPI above it. Remove those along with the category — their
+          // transactions have just moved to 'miscellaneous', so there is nothing left for
+          // such a budget to measure.
+          const orphanedBudgets = budgets.filter((b) => b.category === cat.name);
+          await Promise.all(orphanedBudgets.map((b) => budgetService.delete(b.id)));
         }
       }
       await categoryService.delete(id);
@@ -210,6 +226,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       queryClient.invalidateQueries({ queryKey: ['customCategories', userId] });
       queryClient.invalidateQueries({ queryKey: ['incomes', userId] });
       queryClient.invalidateQueries({ queryKey: ['expenses', userId] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', userId] });
     },
   });
 
@@ -223,8 +240,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ]);
   };
 
-  const summary = calculateSummary(incomes, expenses, budgets);
-  summary.activeGoalsCount = goals.filter((g) => g.current_amount < g.target_amount).length;
+  // Memoized because this object goes straight into the context value below: rebuilding
+  // it on every render gave it a fresh identity every time, which defeated that useMemo
+  // entirely — and re-summed every transaction in the account on each render besides.
+  const summary = useMemo(() => {
+    const next = calculateSummary(incomes, expenses, budgets);
+    next.activeGoalsCount = goals.filter((g) => g.current_amount < g.target_amount).length;
+    return next;
+  }, [incomes, expenses, budgets, goals]);
 
   // custom_categories is deliberately excluded from the load-failure signal below: it's
   // the one collection that can legitimately not exist yet (a project that hasn't run

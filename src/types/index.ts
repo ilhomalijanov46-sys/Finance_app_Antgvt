@@ -113,7 +113,6 @@ export interface FinancialSummary {
   netBalance: number;
   savingsRate: number;
   activeGoalsCount: number;
-  budgetUsagePercent: number;
 }
 
 export interface CategorySummary {

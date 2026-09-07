@@ -89,6 +89,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // asking Supabase about it, and must never be cleared just because Supabase
         // (checked afterwards, or from another tab) has no real session of its own.
         if (localDemoStore.isDemoSession()) {
+          // The sample dataset is fetched on demand (see localDemoStore.ensureSeeded);
+          // a restored demo session already has it in storage, so this is usually a
+          // no-op that costs nothing.
+          await localDemoStore.ensureSeeded();
           applyProfile(localDemoStore.getUser(), true);
           return;
         }
@@ -255,6 +259,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInDemo = async () => {
     authGeneration.current++;
+    await localDemoStore.ensureSeeded();
     const demoUser = localDemoStore.getUser();
     // The demo account has no real per-user "saved preference" to restore — its
     // locale is just a hardcoded default in mockData.ts. Blindly restoring it used to
@@ -276,15 +281,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localDemoStore.setDemoSession(false);
       setUser(null);
       setIsDemoMode(false);
-      // Clean up any remaining localStorage auth keys
+      // Clean up the session keys — and only those. This used to also delete every
+      // `pft_demo*` key and the local category list, so signing out of a *real* account
+      // wiped the demo workspace stored in the same browser: anything the visitor had
+      // entered while trying the demo was gone, with nothing having asked them. The demo
+      // store holds sample data only, it is reset from the demo itself, and it is not
+      // tied to the account being signed out of.
       for (const key of Object.keys(localStorage)) {
-        if (
-          key.startsWith('sb-') ||
-          key.startsWith('pft_demo') ||
-          key.startsWith('pft_is_demo') ||
-          key === 'pft_custom_categories' ||
-          key === 'pft_currency'
-        ) {
+        if (key.startsWith('sb-') || key.startsWith('pft_is_demo') || key === 'pft_currency') {
           localStorage.removeItem(key);
         }
       }

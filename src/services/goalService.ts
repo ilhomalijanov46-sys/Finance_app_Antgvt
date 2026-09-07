@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { localDemoStore, assertWritten } from './mockData';
 import { isDemoContext } from './demoMode';
+import { fetchAllPages } from './pagination';
 import { expenseService } from './expenseService';
 import { Goal } from '../types';
 import { toDateKey } from '../utils/formatters';
@@ -17,19 +18,14 @@ export const goalService = {
       return localDemoStore.getGoals();
     }
 
-    const { data, error } = await supabase!
-      .from('goals')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      // Rethrow: a failed read must reach the UI as an error, not as "no records".
-      console.error('Failed to fetch goals from Supabase:', error);
-      throw error;
-    }
-
-    return (data as Goal[]) || [];
+    return fetchAllPages<Goal>('goals', (from, to) =>
+      supabase!
+        .from('goals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(from, to)
+    );
   },
 
   create: async (goal: Omit<Goal, 'id' | 'created_at'>): Promise<Goal> => {

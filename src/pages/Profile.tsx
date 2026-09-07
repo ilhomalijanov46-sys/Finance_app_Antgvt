@@ -29,6 +29,9 @@ import {
   KeyRound,
 } from 'lucide-react';
 
+const MAX_IMPORT_MB = 20;
+const MAX_IMPORT_BYTES = MAX_IMPORT_MB * 1024 * 1024;
+
 export const Profile: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { user, isDemoMode, signOut, updateUserPreferences, updatePassword } = useAuth();
@@ -142,6 +145,16 @@ export const Profile: React.FC = () => {
     const input = e.target;
     const file = input.files?.[0];
     if (!file) return;
+
+    // FileReader + JSON.parse are both all-or-nothing and synchronous once the read
+    // finishes: picking a multi-hundred-megabyte file (or the wrong file entirely) froze
+    // the tab with no explanation. A real backup of this app is orders of magnitude
+    // smaller than this ceiling.
+    if (file.size > MAX_IMPORT_BYTES) {
+      setImportStatus({ ok: false, message: t('profile.importTooLarge', { mb: MAX_IMPORT_MB }) });
+      input.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onerror = () => setImportStatus({ ok: false, message: t('profile.importError') });
