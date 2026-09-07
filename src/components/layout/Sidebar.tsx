@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, onNavigate }) => {
       {/* Top Branding */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 px-3 py-2">
-          <AppLogo size={32} className="w-8 h-8 shadow-apple-md shadow-blue-500/20 rounded-[9px]" />
+          <AppLogo size={32} className="w-8 h-8" />
           <div>
             <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
               <span>{t('app.title')}</span>

@@ -58,7 +58,7 @@ export const ForgotPassword: React.FC = () => {
         className="w-full max-w-md space-y-6"
       >
         <div className="text-center space-y-2">
-          <AppLogo size={56} className="w-14 h-14 mx-auto shadow-apple-md shadow-blue-500/25 rounded-[15px]" />
+          <AppLogo size={56} className="w-14 h-14 mx-auto" />
           <h1 className="text-2xl font-bold tracking-tight">{t('auth.title')}</h1>
         </div>
 
