@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useData } from '../context/DataContext';
 import { useCurrency } from '../hooks/useCurrency';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { StatCard } from '../components/common/StatCard';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -42,6 +43,8 @@ export const Dashboard: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { incomes, expenses, goals, summary } = useData();
   const { format, currency } = useCurrency();
+  // Chart sizing that Tailwind cannot express: recharts takes these as numbers.
+  const isMobile = useIsMobile();
 
   const [activeModal, setActiveModal] = useState<'income' | 'expense' | 'goal' | null>(null);
 
@@ -270,30 +273,36 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Cash Flow Area Chart */}
         <Card variant="glass" padding="lg" className="lg:col-span-2 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          {/* On a phone the legend gets its own line. Side by side, the subtitle was left
+              wrapping in a column a few words wide and its second line ran under the
+              legend, which read as two overlapping sentences. */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-4">
+            <div className="min-w-0">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
                 {t('dashboard.cashFlow')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                 {t('dashboard.cashFlowDesc')}
               </p>
             </div>
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-4 text-xs shrink-0">
               <span className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                 {t('incomes.title')}
               </span>
               <span className="flex items-center gap-1.5 font-medium text-rose-600 dark:text-rose-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
                 {t('expenses.title')}
               </span>
             </div>
           </div>
 
-          <div className="h-64 sm:h-72 w-full pt-4">
+          <div className="h-56 sm:h-72 w-full pt-2 sm:pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart
+                data={monthlyTrends}
+                margin={{ top: 10, right: isMobile ? 4 : 10, left: 0, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
@@ -307,23 +316,38 @@ export const Dashboard: React.FC = () => {
                 <XAxis
                   dataKey="month"
                   stroke="#888888"
-                  fontSize={11}
+                  fontSize={isMobile ? 10 : 11}
                   tickLine={false}
                   axisLine={false}
+                  tickMargin={8}
+                  // Six month names do not fit across a phone; dropping every other label
+                  // beats printing them on top of each other.
+                  interval="preserveStartEnd"
+                  minTickGap={isMobile ? 12 : 4}
                 />
                 <YAxis
                   stroke="#888888"
-                  fontSize={11}
+                  fontSize={isMobile ? 10 : 11}
                   tickLine={false}
                   axisLine={false}
+                  width={isMobile ? 38 : 56}
+                  tickCount={isMobile ? 4 : 5}
                   tickFormatter={(val) => formatAxisValue(val, currency)}
                 />
                 <Tooltip
+                  // The default cursor is a hard white rule that cut the dark chart in
+                  // half; and a tooltip that keeps the finger's position covers the very
+                  // point being read, so it is pinned above the touch point instead.
+                  cursor={{ stroke: 'rgba(148, 163, 184, 0.55)', strokeWidth: 1 }}
+                  offset={isMobile ? 12 : 10}
+                  position={isMobile ? { y: 8 } : undefined}
+                  wrapperStyle={{ outline: 'none', zIndex: 10 }}
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="rounded-xl backdrop-blur-xl bg-white/95 dark:bg-zinc-900/95 p-3 shadow-apple-lg border border-slate-200/80 dark:border-zinc-800 text-xs space-y-1">
+                        <div className="rounded-xl backdrop-blur-xl bg-white/95 dark:bg-zinc-900/95 px-3 py-2 shadow-apple-lg border border-slate-200/80 dark:border-zinc-800 text-[11px] sm:text-xs space-y-1 max-w-[190px]">
                           <p className="font-bold text-slate-900 dark:text-zinc-100">{label}</p>
+                          {/* Wraps rather than runs past the card: an amount can be long. */}
                           <p className="text-emerald-600 dark:text-emerald-400 font-semibold">
                             {t('incomes.title')}: {format(Number(payload[0]?.value || 0))}
                           </p>

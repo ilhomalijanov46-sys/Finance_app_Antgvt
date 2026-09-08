@@ -10,8 +10,12 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <!-- No maximum-scale/user-scalable=no: that blocked pinch-to-zoom outright, which
-       WCAG 1.4.4 requires be possible — a real barrier for anyone with low vision. -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+       WCAG 1.4.4 requires be possible — a real barrier for anyone with low vision.
+       `minimum-scale=1` only stops the other direction: pinching *out* used to shrink the
+       whole app below 100%, leaving it as a small panel floating in a black margin with no
+       way back except reloading. Zooming in, the accessible direction, is untouched. -->
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
   <meta name="description"
     content="Personal Finance Tracker — An ultra-fast, aesthetically refined personal finance management application with Apple & macOS design aesthetics." />
   <!-- Launched from the home screen the app runs standalone: no address bar, no Safari
