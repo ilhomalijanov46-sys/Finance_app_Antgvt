@@ -6,6 +6,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Expense, ExpenseCategory, PaymentMethod } from '../../types';
 import { toDateKey, normalizeDecimalInput } from '../../utils/formatters';
+import { fromDecimalInput } from '../../utils/validation';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
@@ -46,11 +47,15 @@ const MAX_AMOUNT = 999_999_999_999.99;
 
 const buildSchema = (t: TFunction) =>
   z.object({
-    amount: z.coerce
-      .number()
-      .finite({ message: t('validation.amountPositive') })
-      .positive({ message: t('validation.amountPositive') })
-      .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') }),
+    amount: fromDecimalInput(
+      z.coerce
+        // Without this, anything that will not parse as a number falls back to zod's own
+        // untranslated "Expected number, received nan".
+        .number({ invalid_type_error: t('validation.amountInvalid') })
+        .finite({ message: t('validation.amountPositive') })
+        .positive({ message: t('validation.amountPositive') })
+        .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') })
+    ),
     category: z.string().min(1, { message: t('validation.categoryRequired') }),
     payment_method: z.enum(['card', 'cash', 'transfer']),
     date: z.string().min(1, { message: t('validation.dateRequired') }),

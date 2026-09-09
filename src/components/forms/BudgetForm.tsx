@@ -13,6 +13,7 @@ import { Button } from '../ui/Button';
 import { AlertCircle } from 'lucide-react';
 import { formatDbError } from '../../utils/dbErrors';
 import { getCategoryColor, normalizeDecimalInput } from '../../utils/formatters';
+import { fromDecimalInput } from '../../utils/validation';
 
 const expenseCategories: ExpenseCategory[] = [
   'groceries',
@@ -40,11 +41,15 @@ const MAX_AMOUNT = 999_999_999_999.99;
 const buildSchema = (t: TFunction) =>
   z.object({
     category: z.string().min(1, { message: t('validation.categoryRequired') }),
-    limit_amount: z.coerce
-      .number()
-      .finite({ message: t('validation.limitPositive') })
-      .positive({ message: t('validation.limitPositive') })
-      .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') }),
+    limit_amount: fromDecimalInput(
+      z.coerce
+        // Without this, anything that will not parse as a number falls back to zod's own
+        // untranslated "Expected number, received nan".
+        .number({ invalid_type_error: t('validation.amountInvalid') })
+        .finite({ message: t('validation.limitPositive') })
+        .positive({ message: t('validation.limitPositive') })
+        .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') })
+    ),
     period: z.enum(['monthly', 'weekly', 'yearly']),
   });
 

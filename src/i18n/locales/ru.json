@@ -381,6 +381,7 @@
     "categoryRequired": "Выберите категорию",
     "limitPositive": "Лимит должен быть больше 0",
     "targetPositive": "Сумма цели должна быть больше 0",
+    "amountInvalid": "Введите сумму числом",
     "amountTooLarge": "Слишком большая сумма",
     "currentExceedsTarget": "Накопленная сумма не может превышать целевую"
   },

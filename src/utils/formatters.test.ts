@@ -74,4 +74,20 @@ describe('normalizeDecimalInput', () => {
   it('leaves an integer untouched', () => {
     expect(normalizeDecimalInput('1500')).toBe('1500');
   });
+
+  // The app prints every amount grouped with a space, so typing or pasting one back the
+  // same way has to work: Number('11 000') is NaN, which reached the user as zod's
+  // untranslated "Expected number, received nan".
+  it('strips a plain space used as a thousands separator', () => {
+    expect(normalizeDecimalInput('11 000')).toBe('11000');
+  });
+
+  it('strips the non-breaking space Intl actually groups with', () => {
+    expect(normalizeDecimalInput('1\u00a0234\u00a0567')).toBe('1234567');
+    expect(normalizeDecimalInput('1\u202f234')).toBe('1234');
+  });
+
+  it('handles a grouped value with a decimal comma', () => {
+    expect(normalizeDecimalInput('11 000,50')).toBe('11000.50');
+  });
 });

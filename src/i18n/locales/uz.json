@@ -380,6 +380,7 @@
     "categoryRequired": "Kategoriyani tanlang",
     "limitPositive": "Limit 0 dan katta bo'lishi kerak",
     "targetPositive": "Maqsad summasi 0 dan katta bo'lishi kerak",
+    "amountInvalid": "Summani raqam bilan kiriting",
     "amountTooLarge": "Summa juda katta",
     "currentExceedsTarget": "Joriy summa maqsaddan oshib ketmasligi kerak"
   },

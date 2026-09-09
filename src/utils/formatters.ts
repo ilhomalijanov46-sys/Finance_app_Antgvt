@@ -141,7 +141,13 @@ export const formatDate = (
 // it reaches zod's z.coerce.number() — a native <input type="number"> either rejects
 // the comma keystroke outright or (per the HTML spec) reports .value as "" for a string
 // that doesn't parse as a number, silently turning the typed amount into 0.
-export const normalizeDecimalInput = (value: string): string => value.replace(',', '.');
+//
+// Spaces go too. Every amount the app *prints* is grouped with a space ("11 000 UZS"),
+// so typing or pasting an amount back the same way is the natural thing to do — and
+// `Number('11 000')` is NaN, which surfaced as zod's untranslated "Expected number,
+// received nan". Intl groups with U+00A0, so the plain \s class is not enough on its own.
+export const normalizeDecimalInput = (value: string): string =>
+  value.replace(/[\s\u00a0\u202f\u2007\u2009]/g, '').replace(',', '.');
 
 export const formatDateTime = (
   dateString: string,

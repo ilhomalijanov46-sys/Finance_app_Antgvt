@@ -13,6 +13,7 @@ import { Button } from '../ui/Button';
 import { AlertCircle } from 'lucide-react';
 import { formatDbError } from '../../utils/dbErrors';
 import { toDateKey, normalizeDecimalInput } from '../../utils/formatters';
+import { fromDecimalInput } from '../../utils/validation';
 
 const colorOptions = [
   '#0071e3', // Apple Blue
@@ -34,15 +35,21 @@ const buildSchema = (t: TFunction) =>
         .string()
         .trim()
         .min(2, { message: t('validation.titleMin') }),
-      target_amount: z.coerce
-        .number()
-        .finite({ message: t('validation.targetPositive') })
-        .positive({ message: t('validation.targetPositive') })
-        .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') }),
-      current_amount: z.coerce
-        .number()
-        .finite({ message: t('validation.currentNonNegative') })
-        .min(0, { message: t('validation.currentNonNegative') }),
+      target_amount: fromDecimalInput(
+        z.coerce
+          // Without this, anything that will not parse as a number falls back to zod's own
+          // untranslated "Expected number, received nan".
+          .number({ invalid_type_error: t('validation.amountInvalid') })
+          .finite({ message: t('validation.targetPositive') })
+          .positive({ message: t('validation.targetPositive') })
+          .max(MAX_AMOUNT, { message: t('validation.amountTooLarge') })
+      ),
+      current_amount: fromDecimalInput(
+        z.coerce
+          .number({ invalid_type_error: t('validation.amountInvalid') })
+          .finite({ message: t('validation.currentNonNegative') })
+          .min(0, { message: t('validation.currentNonNegative') })
+      ),
       deadline: z.string().optional(),
       color: z.string().default('#0071e3'),
     })

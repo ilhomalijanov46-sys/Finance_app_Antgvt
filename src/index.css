@@ -63,6 +63,32 @@
     border-radius: 4px;
   }
 
+  /* A double tap on a control counted as "zoom in", which is easy to trigger by accident
+     on a button you press twice in a row. `manipulation` drops only the double-tap
+     gesture, and only over these elements — pinch-to-zoom, which WCAG 1.4.4 requires,
+     still works everywhere. */
+  button,
+  a,
+  label,
+  summary,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+
+  /* iOS Safari zooms the page in whenever a field smaller than 16px takes focus, and it
+     does not zoom back out afterwards — you are left on a magnified page with the fixed
+     header panned off screen. The shared Input and the Calendar's selects each set their
+     own `text-base sm:text-…` for this; this rule is the floor for any field that ships
+     without a size of its own (a bare <input> defaults to about 13px). It cannot override
+     a Tailwind text utility, which is why the components state it themselves. */
+  @media (max-width: 639px) {
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
   /* Hide native number input spin buttons / steppers */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {

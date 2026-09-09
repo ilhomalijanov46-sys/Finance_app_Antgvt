@@ -216,7 +216,7 @@ export const Calendar: React.FC = () => {
             value={month}
             aria-label={t('calendar.selectMonth')}
             onChange={(e) => setSpecificMonth(Number(e.target.value))}
-            className="h-10 sm:h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm capitalize"
+            className="h-10 sm:h-9 px-3 text-base sm:text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm capitalize"
           >
             {monthsList.map((m) => (
               <option key={m.index} value={m.index} className="capitalize dark:bg-zinc-900">
@@ -230,7 +230,7 @@ export const Calendar: React.FC = () => {
             value={year}
             aria-label={t('calendar.selectYear')}
             onChange={(e) => setSpecificYear(Number(e.target.value))}
-            className="h-10 sm:h-9 px-3 text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm"
+            className="h-10 sm:h-9 px-3 text-base sm:text-xs font-semibold rounded-xl bg-white/80 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/60 text-slate-900 dark:text-zinc-100 outline-none shadow-apple-sm"
           >
             {yearsList.map((y) => (
               <option key={y} value={y} className="dark:bg-zinc-900">

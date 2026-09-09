@@ -37,7 +37,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helperText ? messageId : undefined}
             className={cn(
-              'w-full text-sm rounded-xl px-3.5 py-2.5 outline-none transition-colors duration-150',
+              // 16px on a phone, not 14: iOS Safari zooms the whole page in when a field
+              // with a smaller font takes focus, and it does not zoom back out when the
+              // field is blurred or its dialog closes. The user was left on a magnified
+              // page with the header panned out of reach. The `sm:` size keeps the
+              // intended 14px everywhere the auto-zoom does not apply.
+              'w-full text-base sm:text-sm rounded-xl px-3.5 py-2.5 outline-none transition-colors duration-150',
               'bg-slate-100/70 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800/80',
               'focus:bg-white dark:focus:bg-zinc-900 text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500',
               'border border-slate-200/80 dark:border-zinc-700/60 shadow-apple-sm',
